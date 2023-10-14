@@ -1,0 +1,44 @@
+name: Test-facts
+
+on: push
+
+jobs:
+  Commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Produce shortened sha
+        run: echo "SHA7=$(echo $(cd scream; git log --oneline  | head -n1 | cut -c1-7))" >> $GITHUB_ENV
+      - name: Tar all folders
+        run: |
+            touch ${SHA7}-full.tar.gz
+            tar --exclude=${SHA7}-full.tar.gz -zcvf ${SHA7}-full.tar.gz .
+
+  Commit-Patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Produce shortened sha
+        run: echo "SHA7=$(echo $(cd scream; git log --oneline  | head -n1 | cut -c1-7))" >> $GITHUB_ENV
+      - name: Tar the code
+        run: |
+            if [ -d "plus/${SHA7}" ]; then
+                cd scream
+                for subdir in $(ls ../plus/${SHA7}/); do
+                    for this_patch in ../plus/${SHA7}/${subdir}/*.patch; do
+                        git apply --index ${this_patch} -v
+                    done
+                    git submodule update --init --recursive 
+                    cd ..
+                    touch ${SHA7}-${subdir}-full.tar.gz
+                    tar --exclude=${SHA7}-${subdir}-full.tar.gz -zcvf ${SHA7}-${subdir}-full.tar.gz .
+                    cd scream
+                    git stash
+                done
+            fi

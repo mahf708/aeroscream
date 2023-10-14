@@ -1,0 +1,43 @@
+name: Post-facts
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  Tarball:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Produce shortened sha
+        run: echo "SHA7=$(echo $(cd scream; git log --oneline  | head -n1 | cut -c1-7))" >> $GITHUB_ENV
+      - name: Patch the code
+        if: contains(github.ref, 'patch')
+        run: |
+            export PATCH=$(echo ${{ github.ref }} | cut -d'-' -f4)
+            echo "PATCH=${PATCH}" >> $GITHUB_ENV
+            cd scream
+            for this_patch in $(ls ../plus/${SHA7}/${PATCH}/*.patch); do
+              echo "Applying patch ${this_patch}"
+              git apply --index ${this_patch} -v
+            done
+            git submodule update --init --recursive
+      - name: Tar all folders
+        run: |
+          # change the name of the folder if there is a patch
+            if [ -z "${PATCH}" ]; then
+                export TAR_NAME=${SHA7}
+            else
+                export TAR_NAME=${SHA7}-${PATCH}
+            fi
+          touch ${TAR_NAME}-full.tar.gz
+          tar --exclude=${TAR_NAME}-full.tar.gz -zcvf ${TAR_NAME}-full.tar.gz .
+      - name: Upload to release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            *.tar.gz
