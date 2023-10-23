@@ -1,0 +1,292 @@
+#!/bin/bash -fe
+
+main () {
+
+    readonly COMPILER="gnugpu"
+    readonly MACHINE="pm-gpu"
+    readonly USER_EMAIL="${USER}@nersc.gov"
+    readonly USER_QUEUE="regular"
+    readonly USER_QUEUE_OPT="--requeue"
+
+    readonly DEBUG_COMPILE=false
+    readonly DO_SHORT_TERM_ARCHIVING=false
+    readonly PROJECT="e3sm"
+    readonly COMPSET="F2010-SCREAMv1"
+    readonly SHORT_RES="ne256pg2"
+    readonly RESOLUTION="${SHORT_RES}_${SHORT_RES}"
+    readonly COMMIT="68b2b5e"
+    readonly PATCH=""
+    if [ "${PATCH}" != "" ]; then
+        readonly REL_NAME="commit-${COMMIT}-patch-${PATCH}"
+        readonly DIR_NAME="${COMMIT}-${PATCH}"
+    else
+        readonly REL_NAME="commit-${COMMIT}"
+        readonly DIR_NAME="${COMMIT}"
+    fi
+    readonly PELAYOUT="384x1"
+    readonly WALLTIME="22:00:00"
+    readonly MODEL_START_TYPE="initial"
+
+    readonly START_DATE="2009-01-01"
+    readonly RESUBMIT="4"
+    readonly STOP_OPTION="nyears"
+    readonly STOP_N="1"
+    readonly REST_OPTION="nyears"
+    readonly REST_N="1"
+    readonly HIST_OPTION="nyears"
+    readonly HIST_N="1"
+    readonly PX="pi"
+    if [ "${DEBUG_COMPILE}" == "true" ]; then
+        readonly CASE_NAME="dbg.${DIR_NAME}.macv2spv1.${PX}.231014.${SHORT_RES}.${PELAYOUT}.4x1nyears"
+    else
+        readonly CASE_NAME="${DIR_NAME}.macv2spv1.${PX}.231014.${SHORT_RES}.${PELAYOUT}.4x1nyears"
+    fi
+
+    readonly LOCAL_YAML_FILES=(
+        "aerocom.yaml"
+        "monthly.yaml"
+    )
+    readonly OUTPUT_YAML_FILES="yep"
+
+    readonly USER_CODE_DIR="/global/homes/m/${USER}/misc/full-scream"
+    readonly MACH_BASE_DIR="${PSCRATCH}"
+
+    readonly CASE_ROOT="${MACH_BASE_DIR}/eamxx/${CASE_NAME}"
+    readonly CODE_ROOT="${USER_CODE_DIR}/${DIR_NAME}/scream"
+
+    readonly CASE_BUILD_DIR=${CASE_ROOT}/build
+    readonly CASE_ARCHIVE_DIR=${CASE_ROOT}/archive
+
+    readonly CASE_RUN_DIR=${CASE_ROOT}/run
+    readonly CASE_SCRIPTS_DIR=${CASE_ROOT}/case_scripts
+
+    do_fetch_code=true
+
+    do_case_build=true
+    # never reuse executable for safety for now
+    # readonly OLD_EXECUTABLE="/pscratch/sd/m/mahf708/eamxx/${DIR_NAME}/e3sm.exe"
+
+    do_create_newcase=true
+    do_case_setup=true
+    do_case_submit=true
+
+    umask 002
+    fetch_code
+    create_newcase
+    case_setup
+    case_build
+    runtime_options
+    copy_script
+    case_submit
+
+}
+
+
+user_nl() {
+
+    echo "+++ Configuring SCREAM for 128 vertical levels +++"
+    ./xmlchange SCREAM_CMAKE_OPTIONS="SCREAM_NP 4 SCREAM_NUM_VERTICAL_LEV 128 SCREAM_NUM_TRACERS 10"
+
+cat << EOF >> user_nl_elm 
+finidat='/global/cfs/cdirs/e3sm/wlin/inputdata/ne256pg2/20230522.I2010CRUELM.ne256pg2.elm.r.2013-08-01-00000.nc'
+EOF
+
+}
+
+fetch_code() {
+
+    if [ "${do_fetch_code,,}" != "true" ]; then
+        echo $'\n----- Skipping fetch_code -----\n'
+        return
+    fi
+
+    if [ -d "${CODE_ROOT}" ]; then
+        echo $'\n----- Skipping fetch_code -----\n'
+        return
+    fi
+
+    mkdir -p "${CODE_ROOT}" && pushd "${CODE_ROOT}" && cd ../../
+    wget "https://github.com/mahf708/aeroscream/releases/download/${REL_NAME}/${DIR_NAME}-full.tar.gz"
+    tar -xf "${DIR_NAME}-full.tar.gz" -C "${DIR_NAME}" && rm "${DIR_NAME}-full.tar.gz" && popd
+}
+
+create_newcase() {
+    if [ "${do_create_newcase,,}" != "true" ]; then
+        echo $'\n----- Skipping create_newcase -----\n'
+        return
+    fi
+    echo $'\n----- Starting create_newcase -----\n'
+    ${CODE_ROOT}/cime/scripts/create_newcase \
+        --case ${CASE_NAME} \
+        --output-root ${CASE_ROOT} \
+        --script-root ${CASE_SCRIPTS_DIR} \
+        --handle-preexisting-dirs u \
+        --compset ${COMPSET} \
+        --res ${RESOLUTION} \
+        --machine ${MACHINE} \
+        --compiler ${COMPILER}\
+        --project ${PROJECT} \
+        --walltime ${WALLTIME} \
+        --pecount ${PELAYOUT} 
+    if [ $? != 0 ]; then
+      echo $'\nNote: if create_newcase failed because sub-directory already exists:'
+      echo $'  * delete old case_script sub-directory'
+      echo $'  * or set do_newcase=false\n'
+      exit 35
+    fi
+}
+
+case_setup() {
+    if [ "${do_case_setup,,}" != "true" ]; then
+        echo $'\n----- Skipping case_setup -----\n'
+        return
+    fi
+    echo $'\n----- Starting case_setup -----\n'
+    pushd ${CASE_SCRIPTS_DIR}
+    ./xmlchange EXEROOT=${CASE_BUILD_DIR}
+    ./xmlchange RUNDIR=${CASE_RUN_DIR}
+    ./xmlchange DOUT_S=${DO_SHORT_TERM_ARCHIVING^^}
+    ./xmlchange DOUT_S_ROOT=${CASE_ARCHIVE_DIR}
+
+    local input_data_dir=`./xmlquery DIN_LOC_ROOT --value`
+    user_nl
+
+    tmp=($(echo "${PELAYOUT}" | tr "x" " "))
+
+    ntasks_atm=${tmp[0]}
+    ntasks_oth=${ntasks_atm}
+
+    ./xmlchange --file env_mach_pes.xml NTHRDS_ATM="16"
+    ./xmlchange --file env_mach_pes.xml NTHRDS_LND="8"
+    ./xmlchange --file env_mach_pes.xml NTHRDS_ICE="8"
+    ./xmlchange --file env_mach_pes.xml NTHRDS_OCN="8"
+    ./xmlchange --file env_mach_pes.xml NTHRDS_ROF="8"
+    ./xmlchange --file env_mach_pes.xml NTHRDS_CPL="1"
+    ./xmlchange --file env_mach_pes.xml NTHRDS_GLC="1"
+    ./xmlchange --file env_mach_pes.xml NTHRDS_WAV="1"
+
+    ./xmlchange PIO_NETCDF_FORMAT="64bit_data"
+
+    ./case.setup --reset
+    popd
+}
+
+case_build() {
+    pushd ${CASE_SCRIPTS_DIR}
+    if [ "${do_case_build,,}" != "true" ]; then
+        echo $'\n----- case_build -----\n'
+        if [ "${OLD_EXECUTABLE}" == "" ]; then
+            if [ -x ${CASE_BUILD_DIR}/e3sm.exe ]; then
+                echo 'Skipping build because $do_case_build = '${do_case_build}
+            else
+                echo 'ERROR: $do_case_build = '${do_case_build}' but no executable exists for this case.'
+                exit 297
+            fi
+        else
+            if [ -x ${OLD_EXECUTABLE} ]; then
+                echo 'Using $OLD_EXECUTABLE = '${OLD_EXECUTABLE}
+                cp -fp ${OLD_EXECUTABLE} ${CASE_BUILD_DIR}/
+            else
+                echo 'ERROR: $OLD_EXECUTABLE = '$OLD_EXECUTABLE' does not exist or is not an executable file.'
+                exit 297
+            fi
+        fi
+        echo 'WARNING: Setting BUILD_COMPLETE = TRUE.  This is a little risky, but trusting the user.'
+        ./xmlchange BUILD_COMPLETE=TRUE
+    else
+        echo $'\n----- Starting case_build -----\n'
+        if [ "${DEBUG_COMPILE^^}" == "TRUE" ]; then
+            ./xmlchange DEBUG=${DEBUG_COMPILE^^}
+        fi
+        if [ -z "${SLURMD_NODENAME}" ]; then 
+            echo $'\nCompiling on login node: GMAKE_J=32\n' 
+            ./xmlchange GMAKE_J=16
+        else 
+            echo $'\nCompiling on compute node: GMAKE_J=128\n' 
+            if [ "${MACHINE}" == "pm-cpu" ]; then
+               ./xmlchange GMAKE_J=256
+ 	    elif [ "${MACHINE}" == "chrysalis" ]; then
+               ./xmlchange GMAKE_J=128
+            elif [ "${MACHINE}" == "anvil" ]; then
+               ./xmlchange GMAKE_J=36
+            elif [ "${MACHINE}" == "compy" ]; then
+            ./xmlchange GMAKE_J=40
+            fi
+        fi
+        ./case.build
+        ./preview_namelists
+    fi
+    popd
+}
+
+runtime_options() {
+    echo $'\n----- Starting runtime_options -----\n'
+    pushd ${CASE_SCRIPTS_DIR}
+    ./xmlchange RUN_STARTDATE=${START_DATE}
+    ./xmlchange STOP_OPTION=${STOP_OPTION,,},STOP_N=${STOP_N}
+    ./xmlchange REST_OPTION=${REST_OPTION,,},REST_N=${REST_N}
+    ./xmlchange HIST_OPTION=${HIST_OPTION,,},HIST_N=${HIST_N}
+    ./xmlchange BUDGETS=TRUE
+    if (( RESUBMIT > 0 )); then
+        ./xmlchange RESUBMIT=${RESUBMIT}
+    fi
+    if [ "${MODEL_START_TYPE,,}" == "initial" ]; then
+        ./xmlchange RUN_TYPE="startup"
+        ./xmlchange CONTINUE_RUN="FALSE"
+    elif [ "${MODEL_START_TYPE,,}" == "continue" ]; then
+        ./xmlchange CONTINUE_RUN="TRUE"
+    elif [ "${MODEL_START_TYPE,,}" == "branch" ] || [ "${MODEL_START_TYPE,,}" == "hybrid" ]; then
+        ./xmlchange RUN_TYPE=${MODEL_START_TYPE,,}
+        ./xmlchange GET_REFCASE=${GET_REFCASE}
+        ./xmlchange RUN_REFDIR=${RUN_REFDIR}
+        ./xmlchange RUN_REFCASE=${RUN_REFCASE}
+        ./xmlchange RUN_REFDATE=${RUN_REFDATE}
+    else
+        echo 'ERROR: $MODEL_START_TYPE = '${MODEL_START_TYPE}' is unrecognized. Exiting.'
+        exit 380
+    fi
+
+    if [ "${USER_QUEUE}" != "" ]; then
+        ./xmlchange JOB_QUEUE=${USER_QUEUE}
+    fi
+
+    # Change output stream yaml files if requested
+    if [ ! -z "${OUTPUT_YAML_FILES}" ]; then
+
+        local this_script_dir=$( dirname -- "$0"; )
+        for some_file in "${LOCAL_YAML_FILES[@]}"
+        do
+            ./atmchange output_yaml_files+="${this_script_dir}/${some_file}"
+            echo "this output_yaml_files is: ${this_script_dir}/${LOCAL_YAML_FILE}"
+        done
+    fi
+
+    ./atmchange spa_data_file="/pscratch/sd/m/mahf708/macv2spv1_ne30pg2_${PX}_231014_3.nc"
+    ./atmchange spa_remap_file="/pscratch/sd/m/mahf708/map_ne30pg2_to_${SHORT_RES}.nc"
+
+    popd
+}
+
+case_submit() {
+    if [ "${do_case_submit,,}" != "true" ]; then
+        echo $'\n----- Skipping case_submit -----\n'
+        return
+    fi
+    echo $'\n----- Starting case_submit -----\n'
+    pushd ${CASE_SCRIPTS_DIR}
+    
+    ./case.submit -a="--mail-type=ALL --mail-user=$USER@nersc.gov ${USER_QUEUE_OPT} --qos=${USER_QUEUE}"
+    popd
+}
+
+copy_script() {
+    echo $'\n----- Saving run script for provenance -----\n'
+    local script_provenance_dir=${CASE_SCRIPTS_DIR}/run_script_provenance
+    mkdir -p ${script_provenance_dir}
+    local this_script_name=$( basename -- "$0"; )
+    local this_script_dir=$( dirname -- "$0"; )
+    local script_provenance_name=${this_script_name}.`date +%Y%m%d-%H%M%S`
+    cp -vp "${this_script_dir}/${this_script_name}" ${script_provenance_dir}/${script_provenance_name}
+}
+
+main
