@@ -20,7 +20,7 @@ jobs:
             export PATCH=$(echo ${{ github.ref }} | cut -d'-' -f4)
             echo "PATCH=${PATCH}" >> $GITHUB_ENV
             cd scream
-            for this_patch in $(ls ../plus/${SHA7}/${PATCH}/*.patch); do
+            for this_patch in $(ls ../patches/${SHA7}/${PATCH}/*.patch); do
               echo "Applying patch ${this_patch}"
               git apply --index ${this_patch} -v
             done

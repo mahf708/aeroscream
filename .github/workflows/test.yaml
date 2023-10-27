@@ -28,10 +28,10 @@ jobs:
         run: echo "SHA7=$(echo $(cd scream; git log --oneline  | head -n1 | cut -c1-7))" >> $GITHUB_ENV
       - name: Tar the code
         run: |
-            if [ -d "plus/${SHA7}" ]; then
+            if [ -d "patches/${SHA7}" ]; then
                 cd scream
-                for subdir in $(ls ../plus/${SHA7}/); do
-                    for this_patch in ../plus/${SHA7}/${subdir}/*.patch; do
+                for subdir in $(ls ../patches/${SHA7}/); do
+                    for this_patch in ../patches/${SHA7}/${subdir}/*.patch; do
                         git apply --index ${this_patch} -v
                     done
                     git submodule update --init --recursive 

@@ -1,0 +1,700 @@
+From 02ff1c99bdc41d055a5c14772a001b1de588b098 Mon Sep 17 00:00:00 2001
+From: Naser Mahfouz <naser.mahfouz@pnnl.gov>
+Date: Mon, 23 Oct 2023 20:46:35 -0700
+Subject: [PATCH 1/6] clean-clear-sky and clean-sky radiation calls
+
+---
+ .../rrtmgp/scream_rrtmgp_interface.cpp        | 79 ++++++++++++++++++-
+ .../rrtmgp/scream_rrtmgp_interface.hpp        |  9 ++-
+ 2 files changed, 82 insertions(+), 6 deletions(-)
+
+diff --git a/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp b/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp
+index e5b27131f2e..36d80495348 100644
+--- a/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp
++++ b/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp
+@@ -222,8 +222,12 @@ namespace scream {
+                 real3d &cld_tau_lw_gpt,
+                 real2d &sw_flux_up, real2d &sw_flux_dn, real2d &sw_flux_dn_dir,
+                 real2d &lw_flux_up, real2d &lw_flux_dn,
++                real2d &sw_clnclrsky_flux_up, real2d &sw_clnclrsky_flux_dn, real2d &sw_clnclrsky_flux_dn_dir,
+                 real2d &sw_clrsky_flux_up, real2d &sw_clrsky_flux_dn, real2d &sw_clrsky_flux_dn_dir,
++                real2d &sw_clnsky_flux_up, real2d &sw_clnsky_flux_dn, real2d &sw_clnsky_flux_dn_dir,
++                real2d &lw_clnclrsky_flux_up, real2d &lw_clnclrsky_flux_dn,
+                 real2d &lw_clrsky_flux_up, real2d &lw_clrsky_flux_dn,
++                real2d &lw_clnsky_flux_up, real2d &lw_clnsky_flux_dn,
+                 real3d &sw_bnd_flux_up, real3d &sw_bnd_flux_dn, real3d &sw_bnd_flux_dn_dir,
+                 real3d &lw_bnd_flux_up, real3d &lw_bnd_flux_dn,
+                 const Real tsi_scaling,
+@@ -252,11 +256,21 @@ namespace scream {
+             fluxes_sw.bnd_flux_up = sw_bnd_flux_up;
+             fluxes_sw.bnd_flux_dn = sw_bnd_flux_dn;
+             fluxes_sw.bnd_flux_dn_dir = sw_bnd_flux_dn_dir;
++            // Clean-clear-sky
++            FluxesBroadband clnclrsky_fluxes_sw;
++            clnclrsky_fluxes_sw.flux_up = sw_clnclrsky_flux_up;
++            clnclrsky_fluxes_sw.flux_dn = sw_clnclrsky_flux_dn;
++            clnclrsky_fluxes_sw.flux_dn_dir = sw_clnclrsky_flux_dn_dir;
+             // Clear-sky
+             FluxesBroadband clrsky_fluxes_sw;
+             clrsky_fluxes_sw.flux_up = sw_clrsky_flux_up;
+             clrsky_fluxes_sw.flux_dn = sw_clrsky_flux_dn;
+             clrsky_fluxes_sw.flux_dn_dir = sw_clrsky_flux_dn_dir;
++            // Clean-sky
++            FluxesBroadband clnsky_fluxes_sw;
++            clnsky_fluxes_sw.flux_up = sw_clnsky_flux_up;
++            clnsky_fluxes_sw.flux_dn = sw_clnsky_flux_dn;
++            clnsky_fluxes_sw.flux_dn_dir = sw_clnsky_flux_dn_dir;
+ 
+             // Setup pointers to RRTMGP LW fluxes
+             FluxesByband fluxes_lw;
+@@ -264,10 +278,18 @@ namespace scream {
+             fluxes_lw.flux_dn = lw_flux_dn;
+             fluxes_lw.bnd_flux_up = lw_bnd_flux_up;
+             fluxes_lw.bnd_flux_dn = lw_bnd_flux_dn;
++            // Clean-clear-sky
++            FluxesBroadband clnclrsky_fluxes_lw;
++            clnclrsky_fluxes_lw.flux_up = lw_clnclrsky_flux_up;
++            clnclrsky_fluxes_lw.flux_dn = lw_clnclrsky_flux_dn;
+             // Clear-sky
+             FluxesBroadband clrsky_fluxes_lw;
+             clrsky_fluxes_lw.flux_up = lw_clrsky_flux_up;
+             clrsky_fluxes_lw.flux_dn = lw_clrsky_flux_dn;
++            // Clean-sky
++            FluxesBroadband clnsky_fluxes_lw;
++            clnsky_fluxes_lw.flux_up = lw_clnsky_flux_up;
++            clnsky_fluxes_lw.flux_dn = lw_clnsky_flux_dn;
+ 
+             auto nswbands = k_dist_sw.get_nband();
+             auto nlwbands = k_dist_lw.get_nband();
+@@ -340,7 +362,7 @@ namespace scream {
+                 ncol, nlay,
+                 k_dist_sw, p_lay, t_lay, p_lev, t_lev, gas_concs, 
+                 sfc_alb_dir, sfc_alb_dif, mu0, aerosol_sw, clouds_sw_gpt,
+-                fluxes_sw, clrsky_fluxes_sw,
++                fluxes_sw, clnclrsky_fluxes_sw, clrsky_fluxes_sw, clnsky_fluxes_sw,
+                 tsi_scaling, logger
+             );
+ 
+@@ -349,7 +371,7 @@ namespace scream {
+                 ncol, nlay,
+                 k_dist_lw, p_lay, t_lay, p_lev, t_lev, gas_concs,
+                 aerosol_lw, clouds_lw_gpt,
+-                fluxes_lw, clrsky_fluxes_lw
++                fluxes_lw, clnclrsky_fluxes_lw, clrsky_fluxes_lw, clnsky_fluxes_lw
+             );
+             
+         }
+@@ -578,7 +600,7 @@ namespace scream {
+                 GasConcs &gas_concs,
+                 real2d &sfc_alb_dir, real2d &sfc_alb_dif, real1d &mu0, 
+                 OpticalProps2str &aerosol, OpticalProps2str &clouds,
+-                FluxesByband &fluxes, FluxesBroadband &clrsky_fluxes,
++                FluxesByband &fluxes, FluxesBroadband &clnclrsky_fluxes, FluxesBroadband &clrsky_fluxes, FluxesBroadband &clnsky_fluxes,
+                 const Real tsi_scaling,
+                 const std::shared_ptr<spdlog::logger>& logger) {
+ 
+@@ -594,18 +616,30 @@ namespace scream {
+             auto &bnd_flux_up = fluxes.bnd_flux_up;
+             auto &bnd_flux_dn = fluxes.bnd_flux_dn;
+             auto &bnd_flux_dn_dir = fluxes.bnd_flux_dn_dir;
++            auto &clnclrsky_flux_up = clnclrsky_fluxes.flux_up;
++            auto &clnclrsky_flux_dn = clnclrsky_fluxes.flux_dn;
++            auto &clnclrsky_flux_dn_dir = clnclrsky_fluxes.flux_dn_dir;
+             auto &clrsky_flux_up = clrsky_fluxes.flux_up;
+             auto &clrsky_flux_dn = clrsky_fluxes.flux_dn;
+             auto &clrsky_flux_dn_dir = clrsky_fluxes.flux_dn_dir;
++            auto &clnsky_flux_up = clnsky_fluxes.flux_up;
++            auto &clnsky_flux_dn = clnsky_fluxes.flux_dn;
++            auto &clnsky_flux_dn_dir = clnsky_fluxes.flux_dn_dir;
+ 
+             // Reset fluxes to zero
+             parallel_for(SimpleBounds<2>(nlay+1,ncol), YAKL_LAMBDA(int ilev, int icol) {
+                 flux_up    (icol,ilev) = 0;
+                 flux_dn    (icol,ilev) = 0;
+                 flux_dn_dir(icol,ilev) = 0;
++                clnclrsky_flux_up    (icol,ilev) = 0;
++                clnclrsky_flux_dn    (icol,ilev) = 0;
++                clnclrsky_flux_dn_dir(icol,ilev) = 0;
+                 clrsky_flux_up    (icol,ilev) = 0;
+                 clrsky_flux_dn    (icol,ilev) = 0;
+                 clrsky_flux_dn_dir(icol,ilev) = 0;
++                clnsky_flux_up    (icol,ilev) = 0;
++                clnsky_flux_dn    (icol,ilev) = 0;
++                clnsky_flux_dn_dir(icol,ilev) = 0;
+             });
+             parallel_for(SimpleBounds<3>(nbnd,nlay+1,ncol), YAKL_LAMBDA(int ibnd, int ilev, int icol) {
+                 bnd_flux_up    (icol,ilev,ibnd) = 0;
+@@ -718,6 +752,10 @@ namespace scream {
+             OpticalProps2str optics;
+             optics.alloc_2str(nday, nlay, k_dist);
+ 
++            // Allocate space for optical properties (no aerosols)
++            OpticalProps2str optics_no_aerosols;
++            optics_no_aerosols.alloc_2str(nday, nlay, k_dist);
++
+             // Limit temperatures for gas optics look-up tables
+             auto t_lay_limited = real2d("t_lay_limited", nday, nlay);
+             limit_to_bounds(t_lay_day, k_dist_sw.get_temp_min(), k_dist_sw.get_temp_max(), t_lay_limited);
+@@ -728,6 +766,8 @@ namespace scream {
+             bool top_at_1 = p_lay_host(1, 1) < p_lay_host(1, nlay);
+ 
+             k_dist.gas_optics(nday, nlay, top_at_1, p_lay_day, p_lev_day, t_lay_limited, gas_concs_day, optics, toa_flux);
++            k_dist.gas_optics(nday, nlay, top_at_1, p_lay_day, p_lev_day, t_lay_limited, gas_concs_day, optics_no_aerosols, toa_flux);
++
+ 
+ #ifdef SCREAM_RRTMGP_DEBUG
+             // Check gas optics
+@@ -741,6 +781,16 @@ namespace scream {
+                 toa_flux(iday,igpt) = tsi_scaling * toa_flux(iday,igpt);
+             });
+ 
++            // Compute clear-clean-sky (just gas) fluxes on daytime columns
++            rte_sw(optics, top_at_1, mu0_day, toa_flux, sfc_alb_dir_T, sfc_alb_dif_T, fluxes_day);
++            // Expand daytime fluxes to all columns
++            parallel_for(SimpleBounds<2>(nlay+1,nday), YAKL_LAMBDA(int ilev, int iday) {
++                int icol = dayIndices(iday);
++                clnclrsky_flux_up    (icol,ilev) = flux_up_day    (iday,ilev);
++                clnclrsky_flux_dn    (icol,ilev) = flux_dn_day    (iday,ilev);
++                clnclrsky_flux_dn_dir(icol,ilev) = flux_dn_dir_day(iday,ilev);
++            });
++
+             // Combine gas and aerosol optics
+             aerosol_day.delta_scale();
+             aerosol_day.increment(optics);
+@@ -760,6 +810,7 @@ namespace scream {
+             // Combine gas and cloud optics
+             clouds_day.delta_scale();
+             clouds_day.increment(optics);
++            clouds_day.increment(optics_no_aerosols);
+             // Compute fluxes on daytime columns
+             rte_sw(optics, top_at_1, mu0_day, toa_flux, sfc_alb_dir_T, sfc_alb_dif_T, fluxes_day);
+             // Expand daytime fluxes to all columns
+@@ -775,6 +826,15 @@ namespace scream {
+                 bnd_flux_dn    (icol,ilev,ibnd) = bnd_flux_dn_day    (iday,ilev,ibnd);
+                 bnd_flux_dn_dir(icol,ilev,ibnd) = bnd_flux_dn_dir_day(iday,ilev,ibnd);
+             });
++            // Compute cleansky (gas + clouds) fluxes on daytime columns
++            rte_sw(optics_no_aerosols, top_at_1, mu0_day, toa_flux, sfc_alb_dir_T, sfc_alb_dif_T, fluxes_day);
++            // Expand daytime fluxes to all columns
++            parallel_for(SimpleBounds<2>(nlay+1,nday), YAKL_LAMBDA(int ilev, int iday) {
++                int icol = dayIndices(iday);
++                clnsky_flux_up    (icol,ilev) = flux_up_day    (iday,ilev);
++                clnsky_flux_dn    (icol,ilev) = flux_dn_day    (iday,ilev);
++                clnsky_flux_dn_dir(icol,ilev) = flux_dn_dir_day(iday,ilev);
++            });
+         }
+ 
+         void rrtmgp_lw(
+@@ -784,7 +844,7 @@ namespace scream {
+                 GasConcs &gas_concs,
+                 OpticalProps1scl &aerosol,
+                 OpticalProps1scl &clouds,
+-                FluxesByband &fluxes, FluxesBroadband &clrsky_fluxes) {
++                FluxesByband &fluxes, FluxesBroadband &clnclrsky_fluxes, FluxesBroadband &clrsky_fluxes, FluxesBroadband &clnsky_fluxes) {
+ 
+             // Problem size
+             int nbnd = k_dist.get_nband();
+@@ -792,6 +852,9 @@ namespace scream {
+             // Allocate space for optical properties
+             OpticalProps1scl optics;
+             optics.alloc_1scl(ncol, nlay, k_dist);
++            // Allocate space for optical properties (no aerosols)
++            OpticalProps1scl optics_no_aerosols;
++            optics.alloc_1scl(ncol, nlay, k_dist);
+ 
+             // Boundary conditions
+             SourceFuncLW lw_sources;
+@@ -838,12 +901,16 @@ namespace scream {
+ 
+             // Do gas optics
+             k_dist.gas_optics(ncol, nlay, top_at_1, p_lay, p_lev, t_lay_limited, t_sfc, gas_concs, optics, lw_sources, real2d(), t_lev_limited);
++            k_dist.gas_optics(ncol, nlay, top_at_1, p_lay, p_lev, t_lay_limited, t_sfc, gas_concs, optics_no_aerosols, lw_sources, real2d(), t_lev_limited);
+ 
+ #ifdef SCREAM_RRTMGP_DEBUG
+             // Check gas optics
+             check_range(optics.tau,  0, std::numeric_limits<Real>::max(), "rrtmgp_lw:optics.tau");
+ #endif
+ 
++            // Compute clean-sky fluxes before we add in aerosols
++            rte_lw(max_gauss_pts, gauss_Ds, gauss_wts, optics, top_at_1, lw_sources, emis_sfc, clnsky_fluxes);
++
+             // Combine gas and aerosol optics
+             aerosol.increment(optics);
+ 
+@@ -852,10 +919,14 @@ namespace scream {
+ 
+             // Combine gas and cloud optics
+             clouds.increment(optics);
++            clouds.increment(optics_no_aerosols)
+ 
+             // Compute allsky fluxes
+             rte_lw(max_gauss_pts, gauss_Ds, gauss_wts, optics, top_at_1, lw_sources, emis_sfc, fluxes);
+ 
++            // Compute clean-clear-sky fluxes
++            rte_lw(max_gauss_pts, gauss_Ds, gauss_wts, optics, top_at_1, lw_sources, emis_sfc, clnclrsky_fluxes);
++
+         }
+ 
+         void compute_cloud_area(
+diff --git a/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.hpp b/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.hpp
+index ab4b3326f64..dabdc6d0107 100644
+--- a/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.hpp
++++ b/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.hpp
+@@ -72,8 +72,12 @@ namespace scream {
+                 real3d &cld_tau_sw_gpt, real3d &cld_tau_lw_gpt,
+                 real2d &sw_flux_up, real2d &sw_flux_dn, real2d &sw_flux_dn_dir,
+                 real2d &lw_flux_up, real2d &lw_flux_dn,
++                real2d &sw_clnclrsky_flux_up, real2d &sw_clnclrsky_flux_dn, real2d &sw_clnclrsky_flux_dn_dir,
+                 real2d &sw_clrsky_flux_up, real2d &sw_clrsky_flux_dn, real2d &sw_clrsky_flux_dn_dir,
++                real2d &sw_clnsky_flux_up, real2d &sw_clnsky_flux_dn, real2d &sw_clnsky_flux_dn_dir,
++                real2d &lw_clnclrsky_flux_up, real2d &lw_clnclrsky_flux_dn,
+                 real2d &lw_clrsky_flux_up, real2d &lw_clrsky_flux_dn,
++                real2d &lw_clnsky_flux_up, real2d &lw_clnsky_flux_dn,
+                 real3d &sw_bnd_flux_up, real3d &sw_bnd_flux_dn, real3d &sw_bnd_flux_dn_dir,
+                 real3d &lw_bnd_flux_up, real3d &lw_bnd_flux_dn,
+                 const Real tsi_scaling,
+@@ -91,7 +95,8 @@ namespace scream {
+                 GasConcs &gas_concs,
+                 real2d &sfc_alb_dir, real2d &sfc_alb_dif, real1d &mu0,
+                 OpticalProps2str &aerosol, OpticalProps2str &clouds,
+-                FluxesByband &fluxes, FluxesBroadband &clrsky_fluxes, const Real tsi_scaling,
++                FluxesByband &fluxes, FluxesBroadband &clnclrsky_fluxes, FluxesBroadband &clrsky_fluxes, FluxesBroadband &clnsky_fluxes,
++                const Real tsi_scaling,
+                 const std::shared_ptr<spdlog::logger>& logger);
+         /*
+          * Longwave driver (called by rrtmgp_main)
+@@ -102,7 +107,7 @@ namespace scream {
+                 real2d &p_lay, real2d &t_lay, real2d &p_lev, real2d &t_lev,
+                 GasConcs &gas_concs,
+                 OpticalProps1scl &aerosol, OpticalProps1scl &clouds,
+-                FluxesByband &fluxes, FluxesBroadband &clrsky_fluxes);
++                FluxesByband &fluxes, FluxesBroadband &clnclrsky_fluxes, FluxesBroadband &clrsky_fluxes, FluxesBroadband &clnsky_fluxes);
+         /*
+          * Return a subcolumn mask consistent with a specified overlap assumption
+          */
+
+From abc7d5ccce17e2b73fd33850612ef4a9ecd023b9 Mon Sep 17 00:00:00 2001
+From: Naser Mahfouz <naser.mahfouz@pnnl.gov>
+Date: Mon, 23 Oct 2023 21:00:36 -0700
+Subject: [PATCH 2/6] optics_no_aerosols
+
+---
+ components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp b/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp
+index 36d80495348..199e76a906f 100644
+--- a/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp
++++ b/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp
+@@ -925,7 +925,7 @@ namespace scream {
+             rte_lw(max_gauss_pts, gauss_Ds, gauss_wts, optics, top_at_1, lw_sources, emis_sfc, fluxes);
+ 
+             // Compute clean-clear-sky fluxes
+-            rte_lw(max_gauss_pts, gauss_Ds, gauss_wts, optics, top_at_1, lw_sources, emis_sfc, clnclrsky_fluxes);
++            rte_lw(max_gauss_pts, gauss_Ds, gauss_wts, optics_no_aerosols, top_at_1, lw_sources, emis_sfc, clnclrsky_fluxes);
+ 
+         }
+ 
+
+From d9a32d519e4d9543a361372af84b61b21835672d Mon Sep 17 00:00:00 2001
+From: Naser Mahfouz <naser.mahfouz@pnnl.gov>
+Date: Tue, 24 Oct 2023 06:32:19 -0700
+Subject: [PATCH 3/6] fix rrtmpg_main calls
+
+---
+ .../src/physics/rrtmgp/eamxx_rrtmgp_process_interface.cpp  | 7 ++++++-
+ .../eamxx/src/physics/rrtmgp/tests/generate_baseline.cpp   | 4 ++++
+ components/eamxx/src/physics/rrtmgp/tests/rrtmgp_tests.cpp | 6 +++++-
+ 3 files changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/components/eamxx/src/physics/rrtmgp/eamxx_rrtmgp_process_interface.cpp b/components/eamxx/src/physics/rrtmgp/eamxx_rrtmgp_process_interface.cpp
+index aa3a8bbf0fd..d7d3d002679 100644
+--- a/components/eamxx/src/physics/rrtmgp/eamxx_rrtmgp_process_interface.cpp
++++ b/components/eamxx/src/physics/rrtmgp/eamxx_rrtmgp_process_interface.cpp
+@@ -847,7 +847,12 @@ void RRTMGPRadiation::run_impl (const double dt) {
+         cld_tau_sw_bnd, cld_tau_lw_bnd,
+         cld_tau_sw_gpt, cld_tau_lw_gpt,
+         sw_flux_up       , sw_flux_dn       , sw_flux_dn_dir       , lw_flux_up       , lw_flux_dn,
+-        sw_clrsky_flux_up, sw_clrsky_flux_dn, sw_clrsky_flux_dn_dir, lw_clrsky_flux_up, lw_clrsky_flux_dn,
++        sw_clnclrsky_flux_up, sw_clnclrsky_flux_dn, sw_clnclrsky_flux_dn_dir,
++        sw_clrsky_flux_up, sw_clrsky_flux_dn, sw_clrsky_flux_dn_dir,
++        sw_clnsky_flux_up, sw_clnsky_flux_dn, sw_clnsky_flux_dn_dir,
++        lw_clnclrsky_flux_up, lw_clnclrsky_flux_dn,
++        lw_clrsky_flux_up, lw_clrsky_flux_dn,
++        lw_clnsky_flux_up, lw_clnsky_flux_dn,
+         sw_bnd_flux_up   , sw_bnd_flux_dn   , sw_bnd_flux_dir      , lw_bnd_flux_up   , lw_bnd_flux_dn,
+         eccf, m_atm_logger
+       );
+diff --git a/components/eamxx/src/physics/rrtmgp/tests/generate_baseline.cpp b/components/eamxx/src/physics/rrtmgp/tests/generate_baseline.cpp
+index 11e711f8d41..8525dd80072 100644
+--- a/components/eamxx/src/physics/rrtmgp/tests/generate_baseline.cpp
++++ b/components/eamxx/src/physics/rrtmgp/tests/generate_baseline.cpp
+@@ -166,8 +166,12 @@ int main (int argc, char** argv) {
+         cld_tau_sw, cld_tau_lw,  // outputs
+         sw_flux_up, sw_flux_dn, sw_flux_dn_dir,
+         lw_flux_up, lw_flux_dn,
++        sw_clnclrsky_flux_up, sw_clnclrsky_flux_dn, sw_clnclrsky_flux_dn_dir,
+         sw_clrsky_flux_up, sw_clrsky_flux_dn, sw_clrsky_flux_dn_dir,
++        sw_clnsky_flux_up, sw_clnsky_flux_dn, sw_clnsky_flux_dn_dir,
++        lw_clnclrsky_flux_up, lw_clnclrsky_flux_dn,
+         lw_clrsky_flux_up, lw_clrsky_flux_dn,
++        lw_clnsky_flux_up, lw_clnsky_flux_dn,
+         sw_bnd_flux_up, sw_bnd_flux_dn, sw_bnd_flux_dir,
+         lw_bnd_flux_up, lw_bnd_flux_dn, tsi_scaling,
+         logger
+diff --git a/components/eamxx/src/physics/rrtmgp/tests/rrtmgp_tests.cpp b/components/eamxx/src/physics/rrtmgp/tests/rrtmgp_tests.cpp
+index 1ed93f854a1..587b93e0696 100644
+--- a/components/eamxx/src/physics/rrtmgp/tests/rrtmgp_tests.cpp
++++ b/components/eamxx/src/physics/rrtmgp/tests/rrtmgp_tests.cpp
+@@ -198,8 +198,12 @@ int run(int argc, char** argv) {
+             cld_tau_sw, cld_tau_lw,  // outputs
+             sw_flux_up, sw_flux_dn, sw_flux_dir,
+             lw_flux_up, lw_flux_dn,
+-            sw_clrsky_flux_up, sw_clrsky_flux_dn, sw_clrsky_flux_dir,
++            sw_clnclrsky_flux_up, sw_clnclrsky_flux_dn, sw_clnclrsky_flux_dn_dir,
++            sw_clrsky_flux_up, sw_clrsky_flux_dn, sw_clrsky_flux_dn_dir,
++            sw_clnsky_flux_up, sw_clnsky_flux_dn, sw_clnsky_flux_dn_dir,
++            lw_clnclrsky_flux_up, lw_clnclrsky_flux_dn,
+             lw_clrsky_flux_up, lw_clrsky_flux_dn,
++            lw_clnsky_flux_up, lw_clnsky_flux_dn,
+             sw_bnd_flux_up, sw_bnd_flux_dn, sw_bnd_flux_dir,
+             lw_bnd_flux_up, lw_bnd_flux_dn, tsi_scaling, logger);
+ 
+
+From 3e607a12050c66f03cf89764dda042cb51659d40 Mon Sep 17 00:00:00 2001
+From: Naser Mahfouz <naser.mahfouz@pnnl.gov>
+Date: Tue, 24 Oct 2023 06:34:25 -0700
+Subject: [PATCH 4/6] consistent calls
+
+---
+ components/eamxx/src/physics/rrtmgp/tests/rrtmgp_tests.cpp | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/components/eamxx/src/physics/rrtmgp/tests/rrtmgp_tests.cpp b/components/eamxx/src/physics/rrtmgp/tests/rrtmgp_tests.cpp
+index 587b93e0696..5794c7dc48e 100644
+--- a/components/eamxx/src/physics/rrtmgp/tests/rrtmgp_tests.cpp
++++ b/components/eamxx/src/physics/rrtmgp/tests/rrtmgp_tests.cpp
+@@ -198,9 +198,9 @@ int run(int argc, char** argv) {
+             cld_tau_sw, cld_tau_lw,  // outputs
+             sw_flux_up, sw_flux_dn, sw_flux_dir,
+             lw_flux_up, lw_flux_dn,
+-            sw_clnclrsky_flux_up, sw_clnclrsky_flux_dn, sw_clnclrsky_flux_dn_dir,
+-            sw_clrsky_flux_up, sw_clrsky_flux_dn, sw_clrsky_flux_dn_dir,
+-            sw_clnsky_flux_up, sw_clnsky_flux_dn, sw_clnsky_flux_dn_dir,
++            sw_clnclrsky_flux_up, sw_clnclrsky_flux_dn, sw_clnclrsky_flux_dir,
++            sw_clrsky_flux_up, sw_clrsky_flux_dn, sw_clrsky_flux_dir,
++            sw_clnsky_flux_up, sw_clnsky_flux_dn, sw_clnsky_flux_dir,
+             lw_clnclrsky_flux_up, lw_clnclrsky_flux_dn,
+             lw_clrsky_flux_up, lw_clrsky_flux_dn,
+             lw_clnsky_flux_up, lw_clnsky_flux_dn,
+
+From 7041ce10bf16eeb74bf79b9c8a1e7f36719cbc53 Mon Sep 17 00:00:00 2001
+From: mahf708 <naser.mahfouz@pnnl.gov>
+Date: Tue, 24 Oct 2023 10:33:44 -0500
+Subject: [PATCH 5/6] fix misc items
+
+---
+ .../rrtmgp/eamxx_rrtmgp_process_interface.cpp | 60 +++++++++++++++++++
+ .../rrtmgp/eamxx_rrtmgp_process_interface.hpp | 12 +++-
+ .../rrtmgp/scream_rrtmgp_interface.cpp        |  2 +-
+ .../rrtmgp/tests/generate_baseline.cpp        | 20 +++++++
+ .../src/physics/rrtmgp/tests/rrtmgp_tests.cpp | 20 +++++++
+ 5 files changed, 112 insertions(+), 2 deletions(-)
+
+diff --git a/components/eamxx/src/physics/rrtmgp/eamxx_rrtmgp_process_interface.cpp b/components/eamxx/src/physics/rrtmgp/eamxx_rrtmgp_process_interface.cpp
+index d7d3d002679..1e896053757 100644
+--- a/components/eamxx/src/physics/rrtmgp/eamxx_rrtmgp_process_interface.cpp
++++ b/components/eamxx/src/physics/rrtmgp/eamxx_rrtmgp_process_interface.cpp
+@@ -127,11 +127,21 @@ void RRTMGPRadiation::set_grids(const std::shared_ptr<const GridsManager> grids_
+   add_field<Computed>("SW_flux_dn_dir", scalar3d_layout_int, Wm2, grid_name, ps);
+   add_field<Computed>("LW_flux_up", scalar3d_layout_int, Wm2, grid_name, "RESTART", ps);
+   add_field<Computed>("LW_flux_dn", scalar3d_layout_int, Wm2, grid_name, "RESTART", ps);
++  add_field<Computed>("SW_clnclrsky_flux_dn", scalar3d_layout_int, Wm2, grid_name, ps);
++  add_field<Computed>("SW_clnclrsky_flux_up", scalar3d_layout_int, Wm2, grid_name, ps);
++  add_field<Computed>("SW_clnclrsky_flux_dn_dir", scalar3d_layout_int, Wm2, grid_name, ps);
+   add_field<Computed>("SW_clrsky_flux_dn", scalar3d_layout_int, Wm2, grid_name, ps);
+   add_field<Computed>("SW_clrsky_flux_up", scalar3d_layout_int, Wm2, grid_name, ps);
+   add_field<Computed>("SW_clrsky_flux_dn_dir", scalar3d_layout_int, Wm2, grid_name, ps);
++  add_field<Computed>("SW_clnsky_flux_dn", scalar3d_layout_int, Wm2, grid_name, ps);
++  add_field<Computed>("SW_clnsky_flux_up", scalar3d_layout_int, Wm2, grid_name, ps);
++  add_field<Computed>("SW_clnsky_flux_dn_dir", scalar3d_layout_int, Wm2, grid_name, ps);
++  add_field<Computed>("LW_clnclrsky_flux_up", scalar3d_layout_int, Wm2, grid_name, ps);
++  add_field<Computed>("LW_clnclrsky_flux_dn", scalar3d_layout_int, Wm2, grid_name, ps);
+   add_field<Computed>("LW_clrsky_flux_up", scalar3d_layout_int, Wm2, grid_name, ps);
+   add_field<Computed>("LW_clrsky_flux_dn", scalar3d_layout_int, Wm2, grid_name, ps);
++  add_field<Computed>("LW_clnsky_flux_up", scalar3d_layout_int, Wm2, grid_name, ps);
++  add_field<Computed>("LW_clnsky_flux_dn", scalar3d_layout_int, Wm2, grid_name, ps);
+   add_field<Computed>("rad_heating_pdel", scalar3d_layout_mid, Pa*K/s, grid_name, "RESTART", ps);
+   // Cloud properties added as computed fields for diagnostic purposes
+   add_field<Computed>("cldlow"        , scalar2d_layout, nondim, grid_name, "RESTART");
+@@ -276,16 +286,36 @@ void RRTMGPRadiation::init_buffers(const ATMBufferManager &buffer_manager)
+   mem += m_buffer.lw_flux_up.totElems();
+   m_buffer.lw_flux_dn = decltype(m_buffer.lw_flux_dn)("lw_flux_dn", mem, m_col_chunk_size, m_nlay+1);
+   mem += m_buffer.lw_flux_dn.totElems();
++  m_buffer.sw_clnclrsky_flux_up = decltype(m_buffer.sw_clnclrsky_flux_up)("sw_clnclrsky_flux_up", mem, m_col_chunk_size, m_nlay+1);
++  mem += m_buffer.sw_clnclrsky_flux_up.totElems();
++  m_buffer.sw_clnclrsky_flux_dn = decltype(m_buffer.sw_clnclrsky_flux_dn)("sw_clnclrsky_flux_dn", mem, m_col_chunk_size, m_nlay+1);
++  mem += m_buffer.sw_clnclrsky_flux_dn.totElems();
++  m_buffer.sw_clnclrsky_flux_dn_dir = decltype(m_buffer.sw_clnclrsky_flux_dn_dir)("sw_clnclrsky_flux_dn_dir", mem, m_col_chunk_size, m_nlay+1);
++  mem += m_buffer.sw_clnclrsky_flux_dn_dir.totElems();
+   m_buffer.sw_clrsky_flux_up = decltype(m_buffer.sw_clrsky_flux_up)("sw_clrsky_flux_up", mem, m_col_chunk_size, m_nlay+1);
+   mem += m_buffer.sw_clrsky_flux_up.totElems();
+   m_buffer.sw_clrsky_flux_dn = decltype(m_buffer.sw_clrsky_flux_dn)("sw_clrsky_flux_dn", mem, m_col_chunk_size, m_nlay+1);
+   mem += m_buffer.sw_clrsky_flux_dn.totElems();
+   m_buffer.sw_clrsky_flux_dn_dir = decltype(m_buffer.sw_clrsky_flux_dn_dir)("sw_clrsky_flux_dn_dir", mem, m_col_chunk_size, m_nlay+1);
+   mem += m_buffer.sw_clrsky_flux_dn_dir.totElems();
++  m_buffer.sw_clnsky_flux_up = decltype(m_buffer.sw_clnsky_flux_up)("sw_clnsky_flux_up", mem, m_col_chunk_size, m_nlay+1);
++  mem += m_buffer.sw_clnsky_flux_up.totElems();
++  m_buffer.sw_clnsky_flux_dn = decltype(m_buffer.sw_clnsky_flux_dn)("sw_clnsky_flux_dn", mem, m_col_chunk_size, m_nlay+1);
++  mem += m_buffer.sw_clnsky_flux_dn.totElems();
++  m_buffer.sw_clnsky_flux_dn_dir = decltype(m_buffer.sw_clnsky_flux_dn_dir)("sw_clnsky_flux_dn_dir", mem, m_col_chunk_size, m_nlay+1);
++  mem += m_buffer.sw_clnsky_flux_dn_dir.totElems();
++  m_buffer.lw_clnclrsky_flux_up = decltype(m_buffer.lw_clnclrsky_flux_up)("lw_clnclrsky_flux_up", mem, m_col_chunk_size, m_nlay+1);
++  mem += m_buffer.lw_clnclrsky_flux_up.totElems();
++  m_buffer.lw_clnclrsky_flux_dn = decltype(m_buffer.lw_clnclrsky_flux_dn)("lw_clnclrsky_flux_dn", mem, m_col_chunk_size, m_nlay+1);
++  mem += m_buffer.lw_clnclrsky_flux_dn.totElems();
+   m_buffer.lw_clrsky_flux_up = decltype(m_buffer.lw_clrsky_flux_up)("lw_clrsky_flux_up", mem, m_col_chunk_size, m_nlay+1);
+   mem += m_buffer.lw_clrsky_flux_up.totElems();
+   m_buffer.lw_clrsky_flux_dn = decltype(m_buffer.lw_clrsky_flux_dn)("lw_clrsky_flux_dn", mem, m_col_chunk_size, m_nlay+1);
+   mem += m_buffer.lw_clrsky_flux_dn.totElems();
++  m_buffer.lw_clnsky_flux_up = decltype(m_buffer.lw_clnsky_flux_up)("lw_clnsky_flux_up", mem, m_col_chunk_size, m_nlay+1);
++  mem += m_buffer.lw_clnsky_flux_up.totElems();
++  m_buffer.lw_clnsky_flux_dn = decltype(m_buffer.lw_clnsky_flux_dn)("lw_clnsky_flux_dn", mem, m_col_chunk_size, m_nlay+1);
++  mem += m_buffer.lw_clnsky_flux_dn.totElems();
+   // 3d arrays with nswbands dimension (shortwave fluxes by band)
+   m_buffer.sw_bnd_flux_up = decltype(m_buffer.sw_bnd_flux_up)("sw_bnd_flux_up", mem, m_col_chunk_size, m_nlay+1, m_nswbands);
+   mem += m_buffer.sw_bnd_flux_up.totElems();
+@@ -440,11 +470,21 @@ void RRTMGPRadiation::run_impl (const double dt) {
+   auto d_sw_flux_dn_dir = get_field_out("SW_flux_dn_dir").get_view<Real**>();
+   auto d_lw_flux_up = get_field_out("LW_flux_up").get_view<Real**>();
+   auto d_lw_flux_dn = get_field_out("LW_flux_dn").get_view<Real**>();
++  auto d_sw_clnclrsky_flux_up = get_field_out("SW_clnclrsky_flux_up").get_view<Real**>();
++  auto d_sw_clnclrsky_flux_dn = get_field_out("SW_clnclrsky_flux_dn").get_view<Real**>();
++  auto d_sw_clnclrsky_flux_dn_dir = get_field_out("SW_clnclrsky_flux_dn_dir").get_view<Real**>();
+   auto d_sw_clrsky_flux_up = get_field_out("SW_clrsky_flux_up").get_view<Real**>();
+   auto d_sw_clrsky_flux_dn = get_field_out("SW_clrsky_flux_dn").get_view<Real**>();
+   auto d_sw_clrsky_flux_dn_dir = get_field_out("SW_clrsky_flux_dn_dir").get_view<Real**>();
++  auto d_sw_clnsky_flux_up = get_field_out("SW_clnsky_flux_up").get_view<Real**>();
++  auto d_sw_clnsky_flux_dn = get_field_out("SW_clnsky_flux_dn").get_view<Real**>();
++  auto d_sw_clnsky_flux_dn_dir = get_field_out("SW_clnsky_flux_dn_dir").get_view<Real**>();
++  auto d_lw_clnclrsky_flux_up = get_field_out("LW_clnclrsky_flux_up").get_view<Real**>();
++  auto d_lw_clnclrsky_flux_dn = get_field_out("LW_clnclrsky_flux_dn").get_view<Real**>();
+   auto d_lw_clrsky_flux_up = get_field_out("LW_clrsky_flux_up").get_view<Real**>();
+   auto d_lw_clrsky_flux_dn = get_field_out("LW_clrsky_flux_dn").get_view<Real**>();
++  auto d_lw_clnsky_flux_up = get_field_out("LW_clnsky_flux_up").get_view<Real**>();
++  auto d_lw_clnsky_flux_dn = get_field_out("LW_clnsky_flux_dn").get_view<Real**>();
+   auto d_rad_heating_pdel = get_field_out("rad_heating_pdel").get_view<Real**>();
+   auto d_sfc_flux_dir_vis = get_field_out("sfc_flux_dir_vis").get_view<Real*>();
+   auto d_sfc_flux_dir_nir = get_field_out("sfc_flux_dir_nir").get_view<Real*>();
+@@ -564,11 +604,21 @@ void RRTMGPRadiation::run_impl (const double dt) {
+       auto sw_flux_dn_dir  = subview_2d(m_buffer.sw_flux_dn_dir);
+       auto lw_flux_up      = subview_2d(m_buffer.lw_flux_up);
+       auto lw_flux_dn      = subview_2d(m_buffer.lw_flux_dn);
++      auto sw_clnclrsky_flux_up      = subview_2d(m_buffer.sw_clnclrsky_flux_up);
++      auto sw_clnclrsky_flux_dn      = subview_2d(m_buffer.sw_clnclrsky_flux_dn);
++      auto sw_clnclrsky_flux_dn_dir  = subview_2d(m_buffer.sw_clnclrsky_flux_dn_dir);
+       auto sw_clrsky_flux_up      = subview_2d(m_buffer.sw_clrsky_flux_up);
+       auto sw_clrsky_flux_dn      = subview_2d(m_buffer.sw_clrsky_flux_dn);
+       auto sw_clrsky_flux_dn_dir  = subview_2d(m_buffer.sw_clrsky_flux_dn_dir);
++      auto sw_clnsky_flux_up      = subview_2d(m_buffer.sw_clnsky_flux_up);
++      auto sw_clnsky_flux_dn      = subview_2d(m_buffer.sw_clnsky_flux_dn);
++      auto sw_clnsky_flux_dn_dir  = subview_2d(m_buffer.sw_clnsky_flux_dn_dir);
++      auto lw_clnclrsky_flux_up      = subview_2d(m_buffer.lw_clnclrsky_flux_up);
++      auto lw_clnclrsky_flux_dn      = subview_2d(m_buffer.lw_clnclrsky_flux_dn);
+       auto lw_clrsky_flux_up      = subview_2d(m_buffer.lw_clrsky_flux_up);
+       auto lw_clrsky_flux_dn      = subview_2d(m_buffer.lw_clrsky_flux_dn);
++      auto lw_clnsky_flux_up      = subview_2d(m_buffer.lw_clnsky_flux_up);
++      auto lw_clnsky_flux_dn      = subview_2d(m_buffer.lw_clnsky_flux_dn);
+       auto sw_bnd_flux_up  = subview_3d(m_buffer.sw_bnd_flux_up);
+       auto sw_bnd_flux_dn  = subview_3d(m_buffer.sw_bnd_flux_dn);
+       auto sw_bnd_flux_dir = subview_3d(m_buffer.sw_bnd_flux_dir);
+@@ -954,11 +1004,21 @@ void RRTMGPRadiation::run_impl (const double dt) {
+           d_sw_flux_dn_dir(icol,k)        = sw_flux_dn_dir(i+1,k+1);
+           d_lw_flux_up(icol,k)            = lw_flux_up(i+1,k+1);
+           d_lw_flux_dn(icol,k)            = lw_flux_dn(i+1,k+1);
++          d_sw_clnclrsky_flux_up(icol,k)     = sw_clnclrsky_flux_up(i+1,k+1);
++          d_sw_clnclrsky_flux_dn(icol,k)     = sw_clnclrsky_flux_dn(i+1,k+1);
++          d_sw_clnclrsky_flux_dn_dir(icol,k) = sw_clnclrsky_flux_dn_dir(i+1,k+1);
+           d_sw_clrsky_flux_up(icol,k)     = sw_clrsky_flux_up(i+1,k+1);
+           d_sw_clrsky_flux_dn(icol,k)     = sw_clrsky_flux_dn(i+1,k+1);
+           d_sw_clrsky_flux_dn_dir(icol,k) = sw_clrsky_flux_dn_dir(i+1,k+1);
++          d_sw_clnsky_flux_up(icol,k)     = sw_clnsky_flux_up(i+1,k+1);
++          d_sw_clnsky_flux_dn(icol,k)     = sw_clnsky_flux_dn(i+1,k+1);
++          d_sw_clnsky_flux_dn_dir(icol,k) = sw_clnsky_flux_dn_dir(i+1,k+1);
++          d_lw_clnclrsky_flux_up(icol,k)     = lw_clnclrsky_flux_up(i+1,k+1);
++          d_lw_clnclrsky_flux_dn(icol,k)     = lw_clnclrsky_flux_dn(i+1,k+1);
+           d_lw_clrsky_flux_up(icol,k)     = lw_clrsky_flux_up(i+1,k+1);
+           d_lw_clrsky_flux_dn(icol,k)     = lw_clrsky_flux_dn(i+1,k+1);
++          d_lw_clnsky_flux_up(icol,k)     = lw_clnsky_flux_up(i+1,k+1);
++          d_lw_clnsky_flux_dn(icol,k)     = lw_clnsky_flux_dn(i+1,k+1);
+         });
+         // Extract optical properties for COSP
+         Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlay), [&] (const int& k) {
+diff --git a/components/eamxx/src/physics/rrtmgp/eamxx_rrtmgp_process_interface.hpp b/components/eamxx/src/physics/rrtmgp/eamxx_rrtmgp_process_interface.hpp
+index 0b900028ffd..4562fd59117 100644
+--- a/components/eamxx/src/physics/rrtmgp/eamxx_rrtmgp_process_interface.hpp
++++ b/components/eamxx/src/physics/rrtmgp/eamxx_rrtmgp_process_interface.hpp
+@@ -107,7 +107,7 @@ class RRTMGPRadiation : public AtmosphereProcess {
+   struct Buffer {
+     static constexpr int num_1d_ncol        = 10;
+     static constexpr int num_2d_nlay        = 16;
+-    static constexpr int num_2d_nlay_p1     = 13;
++    static constexpr int num_2d_nlay_p1     = 23;
+     static constexpr int num_2d_nswbands    = 2;
+     static constexpr int num_3d_nlev_nswbands = 4;
+     static constexpr int num_3d_nlev_nlwbands = 2;
+@@ -154,11 +154,21 @@ class RRTMGPRadiation : public AtmosphereProcess {
+     real2d sw_flux_dn_dir;
+     real2d lw_flux_up;
+     real2d lw_flux_dn;
++    real2d sw_clnclrsky_flux_up;
++    real2d sw_clnclrsky_flux_dn;
++    real2d sw_clnclrsky_flux_dn_dir;
+     real2d sw_clrsky_flux_up;
+     real2d sw_clrsky_flux_dn;
+     real2d sw_clrsky_flux_dn_dir;
++    real2d sw_clnsky_flux_up;
++    real2d sw_clnsky_flux_dn;
++    real2d sw_clnsky_flux_dn_dir;
++    real2d lw_clnclrsky_flux_up;
++    real2d lw_clnclrsky_flux_dn;
+     real2d lw_clrsky_flux_up;
+     real2d lw_clrsky_flux_dn;
++    real2d lw_clnsky_flux_up;
++    real2d lw_clnsky_flux_dn;
+     uview_2d<Real> d_tint;
+ 
+     // 3d size (ncol, nlay+1, nswbands)
+diff --git a/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp b/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp
+index 199e76a906f..a13e6ca1824 100644
+--- a/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp
++++ b/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp
+@@ -919,7 +919,7 @@ namespace scream {
+ 
+             // Combine gas and cloud optics
+             clouds.increment(optics);
+-            clouds.increment(optics_no_aerosols)
++            clouds.increment(optics_no_aerosols);
+ 
+             // Compute allsky fluxes
+             rte_lw(max_gauss_pts, gauss_Ds, gauss_wts, optics, top_at_1, lw_sources, emis_sfc, fluxes);
+diff --git a/components/eamxx/src/physics/rrtmgp/tests/generate_baseline.cpp b/components/eamxx/src/physics/rrtmgp/tests/generate_baseline.cpp
+index 8525dd80072..4e678c7a825 100644
+--- a/components/eamxx/src/physics/rrtmgp/tests/generate_baseline.cpp
++++ b/components/eamxx/src/physics/rrtmgp/tests/generate_baseline.cpp
+@@ -108,11 +108,21 @@ int main (int argc, char** argv) {
+     real2d sw_flux_dn_dir("sw_flux_dn_dir", ncol, nlay+1);
+     real2d lw_flux_up ("lw_flux_up" , ncol, nlay+1);
+     real2d lw_flux_dn ("lw_flux_dn" , ncol, nlay+1);
++    real2d sw_clnclrsky_flux_up ("sw_clnclrsky_flux_up" , ncol, nlay+1);
++    real2d sw_clnclrsky_flux_dn ("sw_clnclrsky_flux_dn" , ncol, nlay+1);
++    real2d sw_clnclrsky_flux_dn_dir("sw_clnclrsky_flux_dn_dir", ncol, nlay+1);
+     real2d sw_clrsky_flux_up ("sw_clrsky_flux_up" , ncol, nlay+1);
+     real2d sw_clrsky_flux_dn ("sw_clrsky_flux_dn" , ncol, nlay+1);
+     real2d sw_clrsky_flux_dn_dir("sw_clrsky_flux_dn_dir", ncol, nlay+1);
++    real2d sw_clnsky_flux_up ("sw_clnsky_flux_up" , ncol, nlay+1);
++    real2d sw_clnsky_flux_dn ("sw_clnsky_flux_dn" , ncol, nlay+1);
++    real2d sw_clnsky_flux_dn_dir("sw_clnsky_flux_dn_dir", ncol, nlay+1);
++    real2d lw_clnclrsky_flux_up ("lw_clnclrsky_flux_up" , ncol, nlay+1);
++    real2d lw_clnclrsky_flux_dn ("lw_clnclrsky_flux_dn" , ncol, nlay+1);
+     real2d lw_clrsky_flux_up ("lw_clrsky_flux_up" , ncol, nlay+1);
+     real2d lw_clrsky_flux_dn ("lw_clrsky_flux_dn" , ncol, nlay+1);
++    real2d lw_clnsky_flux_up ("lw_clnsky_flux_up" , ncol, nlay+1);
++    real2d lw_clnsky_flux_dn ("lw_clnsky_flux_dn" , ncol, nlay+1);
+     real3d sw_bnd_flux_up ("sw_bnd_flux_up" , ncol, nlay+1, nswbands);
+     real3d sw_bnd_flux_dn ("sw_bnd_flux_dn" , ncol, nlay+1, nswbands);
+     real3d sw_bnd_flux_dir("sw_bnd_flux_dir", ncol, nlay+1, nswbands);
+@@ -223,11 +233,21 @@ int main (int argc, char** argv) {
+     sw_flux_dn_dir.deallocate();
+     lw_flux_up.deallocate();
+     lw_flux_dn.deallocate();
++    sw_clnclrsky_flux_up.deallocate();
++    sw_clnclrsky_flux_dn.deallocate();
++    sw_clnclrsky_flux_dn_dir.deallocate();
+     sw_clrsky_flux_up.deallocate();
+     sw_clrsky_flux_dn.deallocate();
+     sw_clrsky_flux_dn_dir.deallocate();
++    sw_clnsky_flux_up.deallocate();
++    sw_clnsky_flux_dn.deallocate();
++    sw_clnsky_flux_dn_dir.deallocate();
++    lw_clnclrsky_flux_up.deallocate();
++    lw_clnclrsky_flux_dn.deallocate();
+     lw_clrsky_flux_up.deallocate();
+     lw_clrsky_flux_dn.deallocate();
++    lw_clnsky_flux_up.deallocate();
++    lw_clnsky_flux_dn.deallocate();
+     sw_bnd_flux_up.deallocate();
+     sw_bnd_flux_dn.deallocate();
+     sw_bnd_flux_dir.deallocate();
+diff --git a/components/eamxx/src/physics/rrtmgp/tests/rrtmgp_tests.cpp b/components/eamxx/src/physics/rrtmgp/tests/rrtmgp_tests.cpp
+index 5794c7dc48e..4fc73a46b08 100644
+--- a/components/eamxx/src/physics/rrtmgp/tests/rrtmgp_tests.cpp
++++ b/components/eamxx/src/physics/rrtmgp/tests/rrtmgp_tests.cpp
+@@ -142,11 +142,21 @@ int run(int argc, char** argv) {
+     real2d sw_flux_dir("sw_flux_dir", ncol, nlay+1);
+     real2d lw_flux_up ("lw_flux_up" , ncol, nlay+1);
+     real2d lw_flux_dn ("lw_flux_dn" , ncol, nlay+1);
++    real2d sw_clnclrsky_flux_up ("sw_clnclrsky_flux_up" , ncol, nlay+1);
++    real2d sw_clnclrsky_flux_dn ("sw_clnclrsky_flux_dn" , ncol, nlay+1);
++    real2d sw_clnclrsky_flux_dir("sw_clnclrsky_flux_dir", ncol, nlay+1);
+     real2d sw_clrsky_flux_up ("sw_clrsky_flux_up" , ncol, nlay+1);
+     real2d sw_clrsky_flux_dn ("sw_clrsky_flux_dn" , ncol, nlay+1);
+     real2d sw_clrsky_flux_dir("sw_clrsky_flux_dir", ncol, nlay+1);
++    real2d sw_clnsky_flux_up ("sw_clnsky_flux_up" , ncol, nlay+1);
++    real2d sw_clnsky_flux_dn ("sw_clnsky_flux_dn" , ncol, nlay+1);
++    real2d sw_clnsky_flux_dir("sw_clnsky_flux_dir", ncol, nlay+1);
++    real2d lw_clnclrsky_flux_up ("lw_clnclrsky_flux_up" , ncol, nlay+1);
++    real2d lw_clnclrsky_flux_dn ("lw_clnclrsky_flux_dn" , ncol, nlay+1);
+     real2d lw_clrsky_flux_up ("lw_clrsky_flux_up" , ncol, nlay+1);
+     real2d lw_clrsky_flux_dn ("lw_clrsky_flux_dn" , ncol, nlay+1);
++    real2d lw_clnsky_flux_up ("lw_clnsky_flux_up" , ncol, nlay+1);
++    real2d lw_clnsky_flux_dn ("lw_clnsky_flux_dn" , ncol, nlay+1);
+     real3d sw_bnd_flux_up ("sw_bnd_flux_up" , ncol, nlay+1, nswbands);
+     real3d sw_bnd_flux_dn ("sw_bnd_flux_dn" , ncol, nlay+1, nswbands);
+     real3d sw_bnd_flux_dir("sw_bnd_flux_dir", ncol, nlay+1, nswbands);
+@@ -234,11 +244,21 @@ int run(int argc, char** argv) {
+     sw_flux_dir.deallocate();
+     lw_flux_up.deallocate();
+     lw_flux_dn.deallocate();
++    sw_clnclrsky_flux_up.deallocate();
++    sw_clnclrsky_flux_dn.deallocate();
++    sw_clnclrsky_flux_dir.deallocate();
+     sw_clrsky_flux_up.deallocate();
+     sw_clrsky_flux_dn.deallocate();
+     sw_clrsky_flux_dir.deallocate();
++    sw_clnsky_flux_up.deallocate();
++    sw_clnsky_flux_dn.deallocate();
++    sw_clnsky_flux_dir.deallocate();
++    lw_clnclrsky_flux_up.deallocate();
++    lw_clnclrsky_flux_dn.deallocate();
+     lw_clrsky_flux_up.deallocate();
+     lw_clrsky_flux_dn.deallocate();
++    lw_clnsky_flux_up.deallocate();
++    lw_clnsky_flux_dn.deallocate();
+     sw_bnd_flux_up.deallocate();
+     sw_bnd_flux_dn.deallocate();
+     sw_bnd_flux_dir.deallocate();
+
+From 9b3042506cc9550fe09af303a4a082765c041fc1 Mon Sep 17 00:00:00 2001
+From: mahf708 <naser.mahfouz@pnnl.gov>
+Date: Tue, 24 Oct 2023 12:39:08 -0500
+Subject: [PATCH 6/6] typo
+
+---
+ components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp b/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp
+index a13e6ca1824..9c5e8185e72 100644
+--- a/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp
++++ b/components/eamxx/src/physics/rrtmgp/scream_rrtmgp_interface.cpp
+@@ -854,7 +854,7 @@ namespace scream {
+             optics.alloc_1scl(ncol, nlay, k_dist);
+             // Allocate space for optical properties (no aerosols)
+             OpticalProps1scl optics_no_aerosols;
+-            optics.alloc_1scl(ncol, nlay, k_dist);
++            optics_no_aerosols.alloc_1scl(ncol, nlay, k_dist);
+ 
+             // Boundary conditions
+             SourceFuncLW lw_sources;
+
