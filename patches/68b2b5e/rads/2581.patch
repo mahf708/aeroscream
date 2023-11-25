@@ -402,8 +402,8 @@ index e5b27131f2e..9c5e8185e72 100644
              check_range(optics.tau,  0, std::numeric_limits<Real>::max(), "rrtmgp_lw:optics.tau");
  #endif
  
-+            // Compute clean-sky fluxes before we add in aerosols
-+            rte_lw(max_gauss_pts, gauss_Ds, gauss_wts, optics, top_at_1, lw_sources, emis_sfc, clnsky_fluxes);
++            // Compute clean-clear-sky fluxes before we add in aerosols
++            rte_lw(max_gauss_pts, gauss_Ds, gauss_wts, optics, top_at_1, lw_sources, emis_sfc, clnclrsky_fluxes);
 +
              // Combine gas and aerosol optics
              aerosol.increment(optics);
@@ -417,8 +417,8 @@ index e5b27131f2e..9c5e8185e72 100644
              // Compute allsky fluxes
              rte_lw(max_gauss_pts, gauss_Ds, gauss_wts, optics, top_at_1, lw_sources, emis_sfc, fluxes);
  
-+            // Compute clean-clear-sky fluxes
-+            rte_lw(max_gauss_pts, gauss_Ds, gauss_wts, optics_no_aerosols, top_at_1, lw_sources, emis_sfc, clnclrsky_fluxes);
++            // Compute clean-sky fluxes
++            rte_lw(max_gauss_pts, gauss_Ds, gauss_wts, optics_no_aerosols, top_at_1, lw_sources, emis_sfc, clnsky_fluxes);
 +
          }
  
