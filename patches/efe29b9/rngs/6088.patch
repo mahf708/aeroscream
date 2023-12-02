@@ -1,0 +1,66 @@
+From 7fe51fcfef86becf9bf1feeb4d14e6229e4ab102 Mon Sep 17 00:00:00 2001
+From: noel <ndkeen@lbl.gov>
+Date: Thu, 30 Nov 2023 11:08:30 -0800
+Subject: [PATCH 1/2] For pm-gpu, NERSC retired cudatoolkit/11.5 after
+ maintenance, so we now have to move to 11.7
+
+Fixes https://github.com/E3SM-Project/E3SM/issues/5314
+
+This change is not BFB for pm-gpu runs.
+[nbfb]
+---
+ cime_config/machines/config_machines.xml | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/cime_config/machines/config_machines.xml b/cime_config/machines/config_machines.xml
+index 2d43389fe257..b2977b80d485 100644
+--- a/cime_config/machines/config_machines.xml
++++ b/cime_config/machines/config_machines.xml
+@@ -302,7 +302,7 @@
+     <PROJECT>e3sm_g</PROJECT>
+     <SAVE_TIMING_DIR>/global/cfs/cdirs/e3sm</SAVE_TIMING_DIR>
+     <SAVE_TIMING_DIR_PROJECTS>e3sm,m3411,m3412</SAVE_TIMING_DIR_PROJECTS>
+-    <CIME_OUTPUT_ROOT>$ENV{PSCRATCH}/e3sm_scratch/pm-gpu</CIME_OUTPUT_ROOT>
++    <CIME_OUTPUT_ROOT>$ENV{PSCRATCH}/e3sm_scratch/pm-gpu/mf117</CIME_OUTPUT_ROOT>
+     <CIME_HTML_ROOT>/global/cfs/cdirs/e3sm/www/$ENV{USER}</CIME_HTML_ROOT>
+     <CIME_URL_ROOT>http://portal.nersc.gov/project/e3sm/$ENV{USER}</CIME_URL_ROOT>
+     <DIN_LOC_ROOT>/global/cfs/cdirs/e3sm/inputdata</DIN_LOC_ROOT>
+@@ -377,12 +377,12 @@
+       </modules>
+ 
+       <modules compiler="gnugpu">
+-        <command name="load">cudatoolkit/11.5</command>
++        <command name="load">cudatoolkit/11.7</command>
+         <command name="load">craype-accel-nvidia80</command>
+       </modules>
+ 
+       <modules compiler="nvidiagpu">
+-        <command name="load">cudatoolkit/11.5</command>
++        <command name="load">cudatoolkit/11.7</command>
+         <command name="load">craype-accel-nvidia80</command>
+       </modules>
+ 
+
+From f3b7994d9421b8abbf2900199487cd9ae3f3b6b2 Mon Sep 17 00:00:00 2001
+From: noel <ndkeen@lbl.gov>
+Date: Thu, 30 Nov 2023 14:18:59 -0800
+Subject: [PATCH 2/2] remove local path change I was using for testing and
+ committed by mistake
+
+---
+ cime_config/machines/config_machines.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cime_config/machines/config_machines.xml b/cime_config/machines/config_machines.xml
+index b2977b80d485..c2be5260c97b 100644
+--- a/cime_config/machines/config_machines.xml
++++ b/cime_config/machines/config_machines.xml
+@@ -302,7 +302,7 @@
+     <PROJECT>e3sm_g</PROJECT>
+     <SAVE_TIMING_DIR>/global/cfs/cdirs/e3sm</SAVE_TIMING_DIR>
+     <SAVE_TIMING_DIR_PROJECTS>e3sm,m3411,m3412</SAVE_TIMING_DIR_PROJECTS>
+-    <CIME_OUTPUT_ROOT>$ENV{PSCRATCH}/e3sm_scratch/pm-gpu/mf117</CIME_OUTPUT_ROOT>
++    <CIME_OUTPUT_ROOT>$ENV{PSCRATCH}/e3sm_scratch/pm-gpu</CIME_OUTPUT_ROOT>
+     <CIME_HTML_ROOT>/global/cfs/cdirs/e3sm/www/$ENV{USER}</CIME_HTML_ROOT>
+     <CIME_URL_ROOT>http://portal.nersc.gov/project/e3sm/$ENV{USER}</CIME_URL_ROOT>
+     <DIN_LOC_ROOT>/global/cfs/cdirs/e3sm/inputdata</DIN_LOC_ROOT>
