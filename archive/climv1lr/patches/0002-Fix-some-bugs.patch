@@ -1,0 +1,43 @@
+From ae5b63ad0a856113478c4c502ffbde2709b9a942 Mon Sep 17 00:00:00 2001
+From: crterai <rterai@uci.edu>
+Date: Wed, 18 Nov 2020 06:46:55 -0800
+Subject: [PATCH 2/3] Fix some bugs
+
+---
+ components/cam/src/physics/rrtmg/radiation.F90 | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/components/cam/src/physics/rrtmg/radiation.F90 b/components/cam/src/physics/rrtmg/radiation.F90
+index 3828be96e2..f6c2f16063 100644
+--- a/components/cam/src/physics/rrtmg/radiation.F90
++++ b/components/cam/src/physics/rrtmg/radiation.F90
+@@ -21,6 +21,7 @@ use physics_types,   only: physics_state, physics_ptend
+ use physconst,       only: cappa
+ use time_manager,    only: get_nstep, is_first_restart_step
+ use cam_abortutils,      only: endrun
++use cam_history_support, only: add_hist_coord
+ use error_messages,  only: handle_err
+ use cam_control_mod, only: lambm0, obliqr, mvelpp, eccen
+ use scamMod,         only: scm_crm_mode, single_column,have_cld,cldobs,&
+@@ -980,6 +981,8 @@ end function radiation_nextsw_cday
+     integer :: icall                     ! index through climate/diagnostic radiation calls
+     logical :: active_calls(0:N_DIAG)
+ 
++    integer :: icol,ilay                 ! index for column and radiation bands
++
+     type(rrtmg_state_t), pointer :: r_state ! contains the atm concentratiosn in layers needed for RRTMG
+ 
+ ! AeroCOM IND3 output +++mhwang
+@@ -1787,9 +1790,6 @@ function reordered(array_in, new_indexing) result(array_out)
+    ! Loop index
+    integer :: ii
+ 
+-   ! Check inputs
+-   call assert(size(array_in) == size(new_indexing), 'reorder_array: sizes inconsistent')
+-
+    ! Reorder array based on input index mapping, which maps old indices to new
+    do ii = 1,size(new_indexing)
+       array_out(ii) = array_in(new_indexing(ii))
+-- 
+2.35.3
+
