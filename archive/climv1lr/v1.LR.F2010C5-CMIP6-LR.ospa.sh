@@ -21,7 +21,7 @@ readonly PROJECT="e3sm"
 # Simulation
 readonly COMPSET="F2010C5-CMIP6-LR"
 readonly RESOLUTION="ne30_oECv3"
-readonly CASE_NAME="v1.LR.F2010.pi.ospa"
+readonly CASE_NAME="v1.LR.${COMPSET}.ospa"
 
 # Code and compilation
 readonly BRANCH="maint-1.0"
@@ -50,8 +50,8 @@ readonly CASE_ARCHIVE_DIR=${CASE_ROOT}/archive
 #  short tests: 'XS_2x5_ndays', 'XS_1x10_ndays', 'S_1x10_ndays', 
 #               'M_1x10_ndays', 'M2_1x10_ndays', 'M80_1x10_ndays', 'L_1x10_ndays'
 #  or 'production' for full simulation
-readonly run='production'
-# readonly run="custom-2_1x5_ndays"
+# readonly run='production'
+readonly run="production"
 
 if [ "${run}" != "production" ]; then
 
@@ -65,7 +65,7 @@ if [ "${run}" != "production" ]; then
   readonly CASE_SCRIPTS_DIR=${CASE_ROOT}/tests/${run}/case_scripts
   readonly CASE_RUN_DIR=${CASE_ROOT}/tests/${run}/run
   readonly PELAYOUT=${layout}
-  readonly WALLTIME="00:45:00"
+  readonly WALLTIME="03:00:00"
   readonly STOP_OPTION=${units}
   readonly STOP_N=${length}
   readonly REST_OPTION=${STOP_OPTION}
@@ -78,19 +78,19 @@ else
   # Production simulation
   readonly CASE_SCRIPTS_DIR=${CASE_ROOT}/case_scripts
   readonly CASE_RUN_DIR=${CASE_ROOT}/run
-  readonly PELAYOUT="custom-22"
-  readonly WALLTIME="24:00:00"
+  readonly PELAYOUT="custom-43"
+  readonly WALLTIME="20:00:00"
   readonly STOP_OPTION="nyears"
   readonly STOP_N="10" # How often to stop the model, should be a multiple of REST_N
   readonly REST_OPTION="nyears"
-  readonly REST_N="5" # How often to write a restart file
-  readonly RESUBMIT="3" # Submissions after initial one
+  readonly REST_N="10" # How often to write a restart file
+  readonly RESUBMIT="2" # Submissions after initial one
   readonly DO_SHORT_TERM_ARCHIVING=false
 fi
 
 # Coupler history 
 readonly HIST_OPTION="nyears"
-readonly HIST_N="5"
+readonly HIST_N="10"
 
 # Leave empty (unless you understand what it does)
 readonly OLD_EXECUTABLE=""
@@ -99,7 +99,7 @@ readonly OLD_EXECUTABLE=""
 do_fetch_code=false
 do_create_newcase=true
 do_case_setup=true
-do_case_build=true
+do_case_build=false
 do_case_submit=true
 
 # --- Now, do the work ---
@@ -142,22 +142,19 @@ echo $'\n----- All done -----\n'
 
 user_nl() {
 
-echo $'\n----- Starting user_nl_fv3 -----\n'
+echo $'\n----- Starting user_nl -----\n'
 
 cat << EOF >> user_nl_cam
 
 ext_frc_type      = 'CYCLICAL'
 ext_frc_cycle_yr  = 2010
 
-ext_frc_type      = 'CYCLICAL'
-ext_frc_cycle_yr  = 1850
-
-ext_frc_specifier = 'SO2         -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_so2_elev_1850-2014_c180205.nc', 'SOAG        -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_soag_elev_1850-2014_c180205.nc', 'bc_a4       -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_bc_a4_elev_1850-2014_c180205.nc', 'num_a1      -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_num_a1_elev_1850-2014_c180205.nc', 'num_a2      -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_num_a2_elev_1850-2014_c180205.nc', 'num_a4      -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_num_a4_elev_1850-2014_c180205.nc', 'pom_a4      -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_pom_a4_elev_1850-2014_c180205.nc', 'so4_a1      -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_so4_a1_elev_1850-2014_c180205.nc', 'so4_a2      -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_so4_a2_elev_1850-2014_c180205.nc'
+ext_frc_specifier = 'SO2         -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_so2_elev_1850-2014_c170525.nc', 'SOAG        -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_soag_elev_1850-2014_c170525.nc', 'bc_a4       -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_bc_a4_elev_1850-2014_c170525.nc', 'num_a1      -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_num_a1_elev_1850-2014_c170525.nc', 'num_a2      -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_num_a2_elev_1850-2014_c170525.nc', 'num_a4      -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_num_a4_elev_1850-2014_c170525.nc', 'pom_a4      -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_pom_a4_elev_1850-2014_c170525.nc', 'so4_a1      -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_so4_a1_elev_1850-2014_c170525.nc', 'so4_a2      -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_so4_a2_elev_1850-2014_c170525.nc'
 
 srf_emis_type     = 'CYCLICAL'
-srf_emis_cycle_yr = 1850
+srf_emis_cycle_yr = 2010
 
-srf_emis_specifier= 'DMS       -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DMSflux.1850.1deg_latlon_conserv.POPmonthlyClimFromACES4BGC_c20160416.nc', 'SO2       -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_so2_surf_1850-2014_c180205.nc', 'bc_a4     -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_bc_a4_surf_1850-2014_c180205.nc', 'num_a1    -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_num_a1_surf_1850-2014_c180205.nc', 'num_a2    -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_num_a2_surf_1850-2014_c180205.nc', 'num_a4    -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_num_a4_surf_1850-2014_c180205.nc', 'pom_a4    -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_pom_a4_surf_1850-2014_c180205.nc', 'so4_a1    -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_so4_a1_surf_1850-2014_c180205.nc', 'so4_a2    -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_so4_a2_surf_1850-2014_c180205.nc'
+srf_emis_specifier= 'DMS       -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DMSflux.2010.1deg_latlon_conserv.POPmonthlyClimFromACES4BGC_c20190220.nc', 'SO2       -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_so2_surf_1850-2014_c170525.nc', 'bc_a4     -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_bc_a4_surf_1850-2014_c170525.nc', 'num_a1    -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_num_a1_surf_1850-2014_c170525.nc', 'num_a2    -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_num_a2_surf_1850-2014_c170525.nc', 'num_a4    -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_num_a4_surf_1850-2014_c170525.nc', 'pom_a4    -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_pom_a4_surf_1850-2014_c170525.nc', 'so4_a1    -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_so4_a1_surf_1850-2014_c170525.nc', 'so4_a2    -> /global/cfs/cdirs/e3sm/inputdata/atm/cam/chem/trop_mozart_aero/emis/DECK_ne30/cmip6_mam4_so4_a2_surf_1850-2014_c170525.nc'
 
 ! -- set these just in case -----------
 history_verbose     = .true.
@@ -166,46 +163,13 @@ history_aero_optics = .true.
 
 ! -- turn on ind3 aerocom -------------
 do_aerocom_ind3     = .true.
-
-rad_diag_1 = 'A:Q:H2O', 'N:O2:O2', 'N:CO2:CO2', 'A:O3:O3', 'N:N2O:N2O', 'N:CH4:CH4', 'N:CFC11:CFC11', 'N:CFC12:CFC12',
-
-nhtfrq             = 0  ,0  ,-3
-mfilt              = 1  ,1  ,40
-avgflag_pertape    = 'A','A','I'
+             
+nhtfrq             = 0  ,0
+mfilt              = 1  ,1
+avgflag_pertape    = 'A','A'
 fexcl1 = 'CFAD_SR532_CAL', 'LINOZ_DO3', 'LINOZ_DO3_PSC', 'LINOZ_O3CLIM', 'LINOZ_O3COL', 'LINOZ_SSO3', 'hstobie_linoz'
-fincl1 = 'extinct_sw_inp','extinct_lw_bnd7','extinct_lw_inp','CLD_CAL', 'TREFMNAV', 'TREFMXAV','OCNFRAC',
-                'angstrm', 'aerindex', 'cod',
-                'cdnc', 'icnc',
-                'cdnum', 'icnum',
-                'clt', 'lcc', 'cdr', 'icr', 'icc', 'ccn',
-                'autoconv', 'accretn', 
-                'cdr', 'colrv', 'lwp', 'iwp', 'lwp2', 'iwp2', 'iwpbf','lwpbf', 'cdnumbf', 'icnumbf',
-                'aod400', 'aod700',
-                'colccn.1', 'colccn.3', 'ccn.1bl', 'ccn.3bl', 'intccn',
-                'CLDTOT', 'AODVIS',
-                'SOLIN',
-                'FLNTC_d1', 'FLNTC', 'FLNT_d1', 'FLNT', 'FLUTC','FLUT',
-                'FSNTC_d1', 'FSNTC', 'FSNT_d1', 'FSNT', 'FSNTOA', 'FSUTOAC_d1', 'FSUTOAC', 'FSUTOA_d1', 'FSUTOA',
-                'OMEGA500', 'OMEGA700', 'TH7001000', 'U850', 'V850',
-                'FREQZM', 'PRECL', 'PRECT', 'PRECZ', 'PRECC',
-                'AER_TAU_SW', 'AER_SSA_SW', 'AER_G_SW', 'AER_TAU_LW', 'CCN3', 'CCN3M'
-
-fincl2 = 'AER_TAU_SW:A', 'AER_SSA_SW:A', 'AER_G_SW:A', 'AER_TAU_LW:A', 'CCN3M', 'PS'
-fincl3 = 'OCNFRAC',
-                'angstrm', 'aerindex', 'cod',
-                'cdnc', 'icnc',
-                'cdnum', 'icnum',
-                'clt', 'lcc', 'cdr', 'icr', 'icc', 'ccn',
-                'autoconv', 'accretn', 
-                'cdr', 'colrv', 'lwp', 'iwp', 'lwp2', 'iwp2', 'iwpbf','lwpbf', 'cdnumbf', 'icnumbf',
-                'aod400', 'aod700',
-                'colccn.1', 'colccn.3', 'ccn.1bl', 'ccn.3bl', 'intccn',
-                'CLDTOT', 'AODVIS',
-                'SOLIN',
-                'FLNTC_d1', 'FLNTC', 'FLNT_d1', 'FLNT', 'FLUTC','FLUT',
-                'FSNTC_d1', 'FSNTC', 'FSNT_d1', 'FSNT', 'FSNTOA', 'FSUTOAC_d1', 'FSUTOAC', 'FSUTOA_d1', 'FSUTOA',
-                'OMEGA500', 'OMEGA700', 'TH7001000', 'U850', 'V850',
-                'FREQZM', 'PRECL', 'PRECT', 'PRECZ', 'PRECC'
+fincl1 = 'extinct_sw_inp','extinct_lw_bnd7','extinct_lw_inp','CLD_CAL', 'TREFMNAV', 'TREFMXAV'
+fincl2 = 'AER_TAU_SW:A', 'AER_SSA_SW:A', 'AER_G_SW:A', 'AER_TAU_LW:A', 'CCN3', 'CCN3M', 'PS'
 EOF
 
 # cat << EOF >> user_nl_clm
