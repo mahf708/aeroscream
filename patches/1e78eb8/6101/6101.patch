@@ -1,0 +1,409 @@
+From 3fae5855ddee6a26c749737c13f1f75ed9f9e8d9 Mon Sep 17 00:00:00 2001
+From: Luca Bertagna <lbertag@sandia.gov>
+Date: Tue, 5 Dec 2023 14:25:07 -0700
+Subject: [PATCH 01/11] Update EKAT submodule, to get Kokkos 4.2
+
+---
+ externals/ekat | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/externals/ekat b/externals/ekat
+index 2ff5853316e1..e8895a2eb987 160000
+--- a/externals/ekat
++++ b/externals/ekat
+@@ -1 +1 @@
+-Subproject commit 2ff5853316e15d4e8004c21890329fd257fa7459
++Subproject commit e8895a2eb987ccbe6ec2d852ea188cd496fc772d
+
+From 5b42f8362ddab49c93a6afc741d3fd93209b86c7 Mon Sep 17 00:00:00 2001
+From: Luca Bertagna <lbertag@sandia.gov>
+Date: Wed, 27 Sep 2023 09:52:18 -0600
+Subject: [PATCH 02/11] HOMME: remove pointless lines in compose
+
+Besides doing nothing, InitArguments is deprecated in Kokkos 4.0
+---
+ components/homme/src/share/compose/compose_slmm.cpp | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/components/homme/src/share/compose/compose_slmm.cpp b/components/homme/src/share/compose/compose_slmm.cpp
+index b8277b5423c6..27ab1e1a7d04 100644
+--- a/components/homme/src/share/compose/compose_slmm.cpp
++++ b/components/homme/src/share/compose/compose_slmm.cpp
+@@ -276,8 +276,6 @@ extern "C" {
+ // Interface for Homme, through compose_mod.F90.
+ void kokkos_init () {
+   amb::dev_init_threads();
+-  Kokkos::InitArguments args;
+-  args.disable_warnings = true;
+   initialize_kokkos();
+   // Test these initialize correctly.
+   Kokkos::View<int> v("hi");
+
+From 0be79609fa858d19e0f7af02cd7aa62232d60491 Mon Sep 17 00:00:00 2001
+From: Luca Bertagna <lbertag@sandia.gov>
+Date: Wed, 27 Sep 2023 09:52:49 -0600
+Subject: [PATCH 03/11] HOMME: remove volatile qualifier in custom reducer join
+ method
+
+Kokkos 4.0 no longer allows use of volatile in this context
+---
+ components/homme/src/share/compose/compose_slmm_siqk.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/components/homme/src/share/compose/compose_slmm_siqk.cpp b/components/homme/src/share/compose/compose_slmm_siqk.cpp
+index 5f8c4474df17..628c023090cb 100644
+--- a/components/homme/src/share/compose/compose_slmm_siqk.cpp
++++ b/components/homme/src/share/compose/compose_slmm_siqk.cpp
+@@ -75,7 +75,7 @@ class TestSphereToRefKernel {
+   }
+ 
+   KOKKOS_INLINE_FUNCTION
+-  void join (volatile value_type& dst, volatile value_type const& src) const {
++  void join (value_type& dst, value_type const& src) const {
+     dst.max_nits = max(dst.max_nits, src.max_nits);
+     dst.sum_nits += src.sum_nits;
+     dst.nfails += src.nfails;
+
+From 6157eafa9bbe513e1899f8802dbf4d7026d22700 Mon Sep 17 00:00:00 2001
+From: Luca Bertagna <lbertag@sandia.gov>
+Date: Tue, 5 Dec 2023 10:57:03 -0700
+Subject: [PATCH 04/11] HOMME: add missing iostream includes
+
+---
+ components/homme/src/share/compose/cedr_util.hpp          | 5 +++--
+ .../homme/test_execs/preqx_kokkos_ut/remap_preqx_ut.cpp   | 1 +
+ .../test_execs/share_kokkos_ut/boundary_exchange_ut.cpp   | 1 +
+ .../homme/test_execs/share_kokkos_ut/col_ops_ut.cpp       | 8 +++++---
+ .../homme/test_execs/share_kokkos_ut/ppm_remap_ut.cpp     | 1 +
+ .../homme/test_execs/share_kokkos_ut/sphere_op_ml.cpp     | 1 +
+ .../homme/test_execs/share_kokkos_ut/sphere_op_sl.cpp     | 1 +
+ .../homme/test_execs/thetal_kokkos_ut/elem_ops_ut.cpp     | 7 ++++---
+ 8 files changed, 17 insertions(+), 8 deletions(-)
+
+diff --git a/components/homme/src/share/compose/cedr_util.hpp b/components/homme/src/share/compose/cedr_util.hpp
+index 52a1a4d77b5b..6d5ca7fecf57 100644
+--- a/components/homme/src/share/compose/cedr_util.hpp
++++ b/components/homme/src/share/compose/cedr_util.hpp
+@@ -4,11 +4,12 @@
+ #ifndef INCLUDE_CEDR_UTIL_HPP
+ #define INCLUDE_CEDR_UTIL_HPP
+ 
+-#include <sstream>
+-
+ #include "cedr_kokkos.hpp"
+ #include "cedr_mpi.hpp"
+ 
++#include <sstream>  // For std::stringstream
++#include <iostream> // For std::cerr
++
+ namespace cedr {
+ namespace util {
+ 
+diff --git a/components/homme/test_execs/preqx_kokkos_ut/remap_preqx_ut.cpp b/components/homme/test_execs/preqx_kokkos_ut/remap_preqx_ut.cpp
+index 480c3782931c..771376e959fa 100644
+--- a/components/homme/test_execs/preqx_kokkos_ut/remap_preqx_ut.cpp
++++ b/components/homme/test_execs/preqx_kokkos_ut/remap_preqx_ut.cpp
+@@ -10,6 +10,7 @@
+ #include "utilities/TestUtils.hpp"
+ 
+ #include <random>
++#include <iostream>
+ 
+ TEST_CASE("remap_interface", "vertical remap") {
+ 
+diff --git a/components/homme/test_execs/share_kokkos_ut/boundary_exchange_ut.cpp b/components/homme/test_execs/share_kokkos_ut/boundary_exchange_ut.cpp
+index 12a7e9a1673e..ad15a1c10bdd 100644
+--- a/components/homme/test_execs/share_kokkos_ut/boundary_exchange_ut.cpp
++++ b/components/homme/test_execs/share_kokkos_ut/boundary_exchange_ut.cpp
+@@ -11,6 +11,7 @@
+ 
+ #include <random>
+ #include <iomanip>
++#include <iostream>
+ 
+ using namespace Homme;
+ 
+diff --git a/components/homme/test_execs/share_kokkos_ut/col_ops_ut.cpp b/components/homme/test_execs/share_kokkos_ut/col_ops_ut.cpp
+index b27b3f3281be..85368cd6ab0f 100644
+--- a/components/homme/test_execs/share_kokkos_ut/col_ops_ut.cpp
++++ b/components/homme/test_execs/share_kokkos_ut/col_ops_ut.cpp
+@@ -1,15 +1,17 @@
+ #include <catch2/catch.hpp>
+ 
+-#include <random>
+-
+ #include "ColumnOps.hpp"
+-#include "Types.hpp"
+ 
+ #include "utilities/TestUtils.hpp"
+ #include "utilities/SubviewUtils.hpp"
+ #include "utilities/SyncUtils.hpp"
+ #include "utilities/ViewUtils.hpp"
+ 
++#include "Types.hpp"
++
++#include <random>
++#include <iostream>
++
+ using namespace Homme;
+ 
+ 
+diff --git a/components/homme/test_execs/share_kokkos_ut/ppm_remap_ut.cpp b/components/homme/test_execs/share_kokkos_ut/ppm_remap_ut.cpp
+index 5fe4a9c21633..401a029607fd 100644
+--- a/components/homme/test_execs/share_kokkos_ut/ppm_remap_ut.cpp
++++ b/components/homme/test_execs/share_kokkos_ut/ppm_remap_ut.cpp
+@@ -8,6 +8,7 @@
+ #include "utilities/TestUtils.hpp"
+ 
+ #include <random>
++#include <iostream>
+ 
+ using namespace Homme;
+ 
+diff --git a/components/homme/test_execs/share_kokkos_ut/sphere_op_ml.cpp b/components/homme/test_execs/share_kokkos_ut/sphere_op_ml.cpp
+index e4cbb4ec4594..e261b60b390d 100644
+--- a/components/homme/test_execs/share_kokkos_ut/sphere_op_ml.cpp
++++ b/components/homme/test_execs/share_kokkos_ut/sphere_op_ml.cpp
+@@ -13,6 +13,7 @@
+ #include <assert.h>
+ #include <stdio.h>
+ #include <random>
++#include <iostream>
+ 
+ using namespace Homme;
+ 
+diff --git a/components/homme/test_execs/share_kokkos_ut/sphere_op_sl.cpp b/components/homme/test_execs/share_kokkos_ut/sphere_op_sl.cpp
+index 26cec000976d..fd2f79fabae5 100644
+--- a/components/homme/test_execs/share_kokkos_ut/sphere_op_sl.cpp
++++ b/components/homme/test_execs/share_kokkos_ut/sphere_op_sl.cpp
+@@ -13,6 +13,7 @@
+ #include <assert.h>
+ #include <stdio.h>
+ #include <random>
++#include <iostream>
+ 
+ using namespace Homme;
+ 
+diff --git a/components/homme/test_execs/thetal_kokkos_ut/elem_ops_ut.cpp b/components/homme/test_execs/thetal_kokkos_ut/elem_ops_ut.cpp
+index 8cccddb5118d..9627b0d6d61c 100644
+--- a/components/homme/test_execs/thetal_kokkos_ut/elem_ops_ut.cpp
++++ b/components/homme/test_execs/thetal_kokkos_ut/elem_ops_ut.cpp
+@@ -1,14 +1,15 @@
+ #include <catch2/catch.hpp>
+ 
+-#include <random>
+-
+ #include "ElementOps.hpp"
+-#include "Types.hpp"
+ 
+ #include "utilities/TestUtils.hpp"
+ #include "utilities/SubviewUtils.hpp"
+ #include "utilities/SyncUtils.hpp"
+ #include "utilities/ViewUtils.hpp"
++#include "Types.hpp"
++
++#include <iostream>
++#include <random>
+ 
+ using namespace Homme;
+ 
+
+From df4007fce23df3d2eaebd1cb62020ec354d0c4d5 Mon Sep 17 00:00:00 2001
+From: Luca Bertagna <lbertag@sandia.gov>
+Date: Tue, 5 Dec 2023 10:57:29 -0700
+Subject: [PATCH 05/11] HOMME: fix Kokkos-related compilation error
+
+Some of the exec spaces static methods are no longer static
+---
+ components/homme/src/share/cxx/ExecSpaceDefs.hpp | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/components/homme/src/share/cxx/ExecSpaceDefs.hpp b/components/homme/src/share/cxx/ExecSpaceDefs.hpp
+index 8c18d8bcbb92..fbcd314cb2b9 100644
+--- a/components/homme/src/share/cxx/ExecSpaceDefs.hpp
++++ b/components/homme/src/share/cxx/ExecSpaceDefs.hpp
+@@ -143,11 +143,7 @@ struct DefaultThreadsDistribution {
+   team_num_threads_vectors(const int num_parallel_iterations,
+                            const ThreadPreferences tp = ThreadPreferences()) {
+     return Parallel::team_num_threads_vectors_from_pool(
+-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+-      ExecSpaceType::thread_pool_size()
+-#else
+-      ExecSpaceType::impl_thread_pool_size()
+-#endif
++      ExecSpaceType().impl_thread_pool_size()
+       , num_parallel_iterations, tp);
+   }
+ };
+
+From 4c2bf4a4b4b68c86b9f39c25c06fb8421d50abca Mon Sep 17 00:00:00 2001
+From: Luca Bertagna <lbertag@sandia.gov>
+Date: Tue, 5 Dec 2023 17:00:06 -0600
+Subject: [PATCH 06/11] HOMME: add missing cmakedefine to preqx
+ config.h.cmake.in file
+
+The KOKKOS_TARGET macro prevents Kokkos::initialize to be called
+twice in kokkos targets. Kokkos 4.2 no longer tolerates double
+initialization, so we must prevent it.
+---
+ components/homme/src/preqx_kokkos/config.h.cmake.in | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/components/homme/src/preqx_kokkos/config.h.cmake.in b/components/homme/src/preqx_kokkos/config.h.cmake.in
+index c0bc4c311c39..119844f3def0 100644
+--- a/components/homme/src/preqx_kokkos/config.h.cmake.in
++++ b/components/homme/src/preqx_kokkos/config.h.cmake.in
+@@ -58,9 +58,8 @@
+ /* ZOLTAN2 SUBPACKAGE OF TRILINOS  library */
+ #cmakedefine01 TRILINOS_HAVE_ZOLTAN2
+ 
+-/* When doing BFB testing, we occasionally must use modified code. */
+-/* Use this flag to protect such code. */
+-#cmakedefine HOMMEXX_BFB_TESTING
++/* Detect whether this is a kokkos target */
++#cmakedefine01 KOKKOS_TARGET
+ 
+ /* Whether to use OpenMP4 */
+ #cmakedefine OMP4
+
+From efaa80e03ed062d9a9e4aaa6ffeb534eaa6b0c87 Mon Sep 17 00:00:00 2001
+From: Luca Bertagna <lbertag@sandia.gov>
+Date: Tue, 5 Dec 2023 17:05:11 -0600
+Subject: [PATCH 07/11] HOMME: add GllFvRemap cxx source files to preqx_kokkos
+ sources
+
+---
+ components/homme/src/preqx_kokkos/CMakeLists.txt | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/components/homme/src/preqx_kokkos/CMakeLists.txt b/components/homme/src/preqx_kokkos/CMakeLists.txt
+index 425e7c34da76..dff42bb97c66 100644
+--- a/components/homme/src/preqx_kokkos/CMakeLists.txt
++++ b/components/homme/src/preqx_kokkos/CMakeLists.txt
+@@ -168,6 +168,8 @@ MACRO(PREQX_KOKKOS_SETUP)
+     ${SRC_SHARE_DIR}/cxx/EulerStepFunctor.cpp
+     ${SRC_SHARE_DIR}/cxx/ExecSpaceDefs.cpp
+     ${SRC_SHARE_DIR}/cxx/FunctorsBuffersManager.cpp
++    ${SRC_SHARE_DIR}/cxx/GllFvRemap.cpp
++    ${SRC_SHARE_DIR}/cxx/GllFvRemapImpl.cpp
+     ${SRC_SHARE_DIR}/cxx/Hommexx_Session.cpp
+     ${SRC_SHARE_DIR}/cxx/HybridVCoord.cpp
+     ${SRC_SHARE_DIR}/cxx/HyperviscosityFunctor.cpp
+
+From 4c9f0cea288dec01abef5dd7319b2ee05515c8a2 Mon Sep 17 00:00:00 2001
+From: Luca Bertagna <lbertag@sandia.gov>
+Date: Tue, 5 Dec 2023 17:16:09 -0600
+Subject: [PATCH 08/11] HOMME: use new CMake syntax from EKAT to build kokkos
+
+---
+ components/homme/CMakeLists.txt | 20 ++++++++++++--------
+ 1 file changed, 12 insertions(+), 8 deletions(-)
+
+diff --git a/components/homme/CMakeLists.txt b/components/homme/CMakeLists.txt
+index c016182e3bf0..fdb996fa17af 100644
+--- a/components/homme/CMakeLists.txt
++++ b/components/homme/CMakeLists.txt
+@@ -447,18 +447,22 @@ if(HOMME_BUILD_EXECS AND NOT BUILD_HOMME_WITHOUT_PIOLIBRARY)
+   ENDIF ()
+ ENDIF ()
+ 
+-# If we don't need kokkos we don't need EKAT, and if
+-# Homme is built in EAMxx EKAT is already built
+-IF (HOMME_USE_KOKKOS AND HOMME_STANDALONE)
+-  # Add ekat's cmake/pkg_build folder to cmake path
++IF (HOMME_USE_KOKKOS)
++  # Add ekat's cmake scripts folders to cmake path
+   set (EKAT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../externals/ekat)
+   set (EKAT_CMAKE_PATH ${EKAT_SOURCE_DIR}/cmake)
+   list(APPEND CMAKE_MODULE_PATH
+-       ${EKAT_CMAKE_PATH}
+-       ${EKAT_CMAKE_PATH}/pkg_build
+-       ${EKAT_CMAKE_PATH}/tpls
++    ${EKAT_CMAKE_PATH}
++    ${EKAT_CMAKE_PATH}/tpls
+   )
+-  include (EkatBuildKokkos)
++
++  # We first try to use find_package. If that doesn't work, build from EKAT's submodule
++  include (EkatFindKokkos)
++  if (NOT Kokkos_FOUND)
++    # The following script checks if Kokkos is already available as a target, and if so does nothing.
++    # For instance, if HOMME is built inside EAMxx, Kokkos will already be available
++    include (EkatBuildKokkos)
++  endif()
+ ENDIF ()
+ 
+ # This folder contains the CMake macro used to build cxx unit tests
+
+From d1e49dad224cab0d779e1d25a6919be4ddcd47cd Mon Sep 17 00:00:00 2001
+From: Luca Bertagna <lbertag@sandia.gov>
+Date: Fri, 12 Jan 2024 12:09:38 -0800
+Subject: [PATCH 09/11] HOMME: do not set cxx standard. Kokkos will crap out
+ anyways if c++17 is not supported
+
+---
+ components/homme/cmake/SetCompilerFlags.cmake | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/components/homme/cmake/SetCompilerFlags.cmake b/components/homme/cmake/SetCompilerFlags.cmake
+index 49e79a463c41..9a37c6a36bd9 100644
+--- a/components/homme/cmake/SetCompilerFlags.cmake
++++ b/components/homme/cmake/SetCompilerFlags.cmake
+@@ -68,12 +68,6 @@ IF (${HOMME_USE_CXX})
+   SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+ 
+   INCLUDE(CheckCXXCompilerFlag)
+-  CHECK_CXX_COMPILER_FLAG("-std=c++14" CXX14_SUPPORTED)
+-  IF (CXX14_SUPPORTED)
+-    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+-  ELSEIF (${HOMME_USE_KOKKOS})
+-    MESSAGE (FATAL_ERROR "Kokkos needs C++14, but the C++ compiler does not support it.")
+-  ENDIF ()
+   CHECK_CXX_COMPILER_FLAG("-cxxlib" CXXLIB_SUPPORTED)
+   IF (CXXLIB_SUPPORTED)
+     SET(CXXLIB_SUPPORTED_CACHE TRUE CACHE BOOL "")
+
+From 6aeab1186bbb31b40e6b9ec7f193b11452ae4053 Mon Sep 17 00:00:00 2001
+From: Luca Bertagna <lbertag@sandia.gov>
+Date: Tue, 23 Apr 2024 13:06:44 -0400
+Subject: [PATCH 10/11] HOMME: fix scope of HIPTraits from kokkos
+
+---
+ components/homme/src/share/cxx/ExecSpaceDefs.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/components/homme/src/share/cxx/ExecSpaceDefs.cpp b/components/homme/src/share/cxx/ExecSpaceDefs.cpp
+index 784d37b65d20..8d496bff5d16 100644
+--- a/components/homme/src/share/cxx/ExecSpaceDefs.cpp
++++ b/components/homme/src/share/cxx/ExecSpaceDefs.cpp
+@@ -187,7 +187,7 @@ team_num_threads_vectors (const int num_parallel_iterations,
+ #elif defined(KOKKOS_ENABLE_HIP)
+   // Use 64 wavefronts per CU and 120 CUs.
+   const int num_warps_device = 120*64; // no such thing Kokkos::Impl::hip_internal_maximum_warp_count();
+-  const int num_threads_warp = Kokkos::Experimental::Impl::HIPTraits::WarpSize;
++  const int num_threads_warp = Kokkos::Impl::HIPTraits::WarpSize;
+ #else
+   // I want thread-distribution rules to be unit-testable even when GPU spaces
+   // are off. Thus, make up a GPU-like machine:
+
+From b95064782f8fd46c8905ecc7ca148d251e1993b4 Mon Sep 17 00:00:00 2001
+From: Luca Bertagna <lbertag@sandia.gov>
+Date: Tue, 16 Jan 2024 10:39:03 -0800
+Subject: [PATCH 11/11] EAMxx: add missing iostream include
+
+---
+ components/eamxx/src/share/util/scream_utils.hpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/components/eamxx/src/share/util/scream_utils.hpp b/components/eamxx/src/share/util/scream_utils.hpp
+index 4dddebf75aa5..b10399f9c99b 100644
+--- a/components/eamxx/src/share/util/scream_utils.hpp
++++ b/components/eamxx/src/share/util/scream_utils.hpp
+@@ -11,6 +11,7 @@
+ #include <list>
+ #include <algorithm>
+ #include <map>
++#include <iostream>
+ 
+ namespace scream {
+ 
