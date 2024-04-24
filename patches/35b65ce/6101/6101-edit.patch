@@ -1,24 +1,7 @@
-From 3fae5855ddee6a26c749737c13f1f75ed9f9e8d9 Mon Sep 17 00:00:00 2001
-From: Luca Bertagna <lbertag@sandia.gov>
-Date: Tue, 5 Dec 2023 14:25:07 -0700
-Subject: [PATCH 01/11] Update EKAT submodule, to get Kokkos 4.2
-
----
- externals/ekat | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/externals/ekat b/externals/ekat
-index 2ff5853316e1..e8895a2eb987 160000
---- a/externals/ekat
-+++ b/externals/ekat
-@@ -1 +1 @@
--Subproject commit 2ff5853316e15d4e8004c21890329fd257fa7459
-+Subproject commit e8895a2eb987ccbe6ec2d852ea188cd496fc772d
-
-From 5b42f8362ddab49c93a6afc741d3fd93209b86c7 Mon Sep 17 00:00:00 2001
+From b24ba722b7ba72ad4d0975cd65ada449603bdf66 Mon Sep 17 00:00:00 2001
 From: Luca Bertagna <lbertag@sandia.gov>
 Date: Wed, 27 Sep 2023 09:52:18 -0600
-Subject: [PATCH 02/11] HOMME: remove pointless lines in compose
+Subject: [PATCH 01/11] HOMME: remove pointless lines in compose
 
 Besides doing nothing, InitArguments is deprecated in Kokkos 4.0
 ---
@@ -39,10 +22,10 @@ index b8277b5423c6..27ab1e1a7d04 100644
    // Test these initialize correctly.
    Kokkos::View<int> v("hi");
 
-From 0be79609fa858d19e0f7af02cd7aa62232d60491 Mon Sep 17 00:00:00 2001
+From 33cb75efcf685a9f24cf4a95dd7fdddbdf801904 Mon Sep 17 00:00:00 2001
 From: Luca Bertagna <lbertag@sandia.gov>
 Date: Wed, 27 Sep 2023 09:52:49 -0600
-Subject: [PATCH 03/11] HOMME: remove volatile qualifier in custom reducer join
+Subject: [PATCH 02/11] HOMME: remove volatile qualifier in custom reducer join
  method
 
 Kokkos 4.0 no longer allows use of volatile in this context
@@ -64,10 +47,10 @@ index 5f8c4474df17..628c023090cb 100644
      dst.sum_nits += src.sum_nits;
      dst.nfails += src.nfails;
 
-From 6157eafa9bbe513e1899f8802dbf4d7026d22700 Mon Sep 17 00:00:00 2001
+From 4c16a21e70c7bf33f22e23e3ad39a417b244859c Mon Sep 17 00:00:00 2001
 From: Luca Bertagna <lbertag@sandia.gov>
 Date: Tue, 5 Dec 2023 10:57:03 -0700
-Subject: [PATCH 04/11] HOMME: add missing iostream includes
+Subject: [PATCH 03/11] HOMME: add missing iostream includes
 
 ---
  components/homme/src/share/compose/cedr_util.hpp          | 5 +++--
@@ -208,10 +191,10 @@ index 8cccddb5118d..9627b0d6d61c 100644
  using namespace Homme;
  
 
-From df4007fce23df3d2eaebd1cb62020ec354d0c4d5 Mon Sep 17 00:00:00 2001
+From 3ae51055be0dcaaa78f9597ad198aa7cc68fdaf7 Mon Sep 17 00:00:00 2001
 From: Luca Bertagna <lbertag@sandia.gov>
 Date: Tue, 5 Dec 2023 10:57:29 -0700
-Subject: [PATCH 05/11] HOMME: fix Kokkos-related compilation error
+Subject: [PATCH 04/11] HOMME: fix Kokkos-related compilation error
 
 Some of the exec spaces static methods are no longer static
 ---
@@ -236,10 +219,10 @@ index 8c18d8bcbb92..fbcd314cb2b9 100644
    }
  };
 
-From 4c2bf4a4b4b68c86b9f39c25c06fb8421d50abca Mon Sep 17 00:00:00 2001
+From 9f887723bc585a368d139b9e03d337713b6465d9 Mon Sep 17 00:00:00 2001
 From: Luca Bertagna <lbertag@sandia.gov>
 Date: Tue, 5 Dec 2023 17:00:06 -0600
-Subject: [PATCH 06/11] HOMME: add missing cmakedefine to preqx
+Subject: [PATCH 05/11] HOMME: add missing cmakedefine to preqx
  config.h.cmake.in file
 
 The KOKKOS_TARGET macro prevents Kokkos::initialize to be called
@@ -266,10 +249,10 @@ index c0bc4c311c39..119844f3def0 100644
  /* Whether to use OpenMP4 */
  #cmakedefine OMP4
 
-From efaa80e03ed062d9a9e4aaa6ffeb534eaa6b0c87 Mon Sep 17 00:00:00 2001
+From 49f26a183b7d06dce9766058b424c0b3247a5bf4 Mon Sep 17 00:00:00 2001
 From: Luca Bertagna <lbertag@sandia.gov>
 Date: Tue, 5 Dec 2023 17:05:11 -0600
-Subject: [PATCH 07/11] HOMME: add GllFvRemap cxx source files to preqx_kokkos
+Subject: [PATCH 06/11] HOMME: add GllFvRemap cxx source files to preqx_kokkos
  sources
 
 ---
@@ -290,10 +273,10 @@ index 425e7c34da76..dff42bb97c66 100644
      ${SRC_SHARE_DIR}/cxx/HybridVCoord.cpp
      ${SRC_SHARE_DIR}/cxx/HyperviscosityFunctor.cpp
 
-From 4c9f0cea288dec01abef5dd7319b2ee05515c8a2 Mon Sep 17 00:00:00 2001
+From 7f3a8bf054ec67c0d5de25ae7443016e67f07028 Mon Sep 17 00:00:00 2001
 From: Luca Bertagna <lbertag@sandia.gov>
 Date: Tue, 5 Dec 2023 17:16:09 -0600
-Subject: [PATCH 08/11] HOMME: use new CMake syntax from EKAT to build kokkos
+Subject: [PATCH 07/11] HOMME: use new CMake syntax from EKAT to build kokkos
 
 ---
  components/homme/CMakeLists.txt | 20 ++++++++++++--------
@@ -335,10 +318,10 @@ index c016182e3bf0..fdb996fa17af 100644
  
  # This folder contains the CMake macro used to build cxx unit tests
 
-From d1e49dad224cab0d779e1d25a6919be4ddcd47cd Mon Sep 17 00:00:00 2001
+From bb7b74097f36118bd4725fba7e8c449ef46c213b Mon Sep 17 00:00:00 2001
 From: Luca Bertagna <lbertag@sandia.gov>
 Date: Fri, 12 Jan 2024 12:09:38 -0800
-Subject: [PATCH 09/11] HOMME: do not set cxx standard. Kokkos will crap out
+Subject: [PATCH 08/11] HOMME: do not set cxx standard. Kokkos will crap out
  anyways if c++17 is not supported
 
 ---
@@ -363,10 +346,10 @@ index 49e79a463c41..9a37c6a36bd9 100644
    IF (CXXLIB_SUPPORTED)
      SET(CXXLIB_SUPPORTED_CACHE TRUE CACHE BOOL "")
 
-From 6aeab1186bbb31b40e6b9ec7f193b11452ae4053 Mon Sep 17 00:00:00 2001
+From 7d2403815a93b32308303cd425e0ba115996399b Mon Sep 17 00:00:00 2001
 From: Luca Bertagna <lbertag@sandia.gov>
 Date: Tue, 23 Apr 2024 13:06:44 -0400
-Subject: [PATCH 10/11] HOMME: fix scope of HIPTraits from kokkos
+Subject: [PATCH 09/11] HOMME: fix scope of HIPTraits from kokkos
 
 ---
  components/homme/src/share/cxx/ExecSpaceDefs.cpp | 2 +-
@@ -386,17 +369,17 @@ index 784d37b65d20..8d496bff5d16 100644
    // I want thread-distribution rules to be unit-testable even when GPU spaces
    // are off. Thus, make up a GPU-like machine:
 
-From b95064782f8fd46c8905ecc7ca148d251e1993b4 Mon Sep 17 00:00:00 2001
+From ae9917a012b69c4e482431942216ac84d2aefbc3 Mon Sep 17 00:00:00 2001
 From: Luca Bertagna <lbertag@sandia.gov>
 Date: Tue, 16 Jan 2024 10:39:03 -0800
-Subject: [PATCH 11/11] EAMxx: add missing iostream include
+Subject: [PATCH 10/11] EAMxx: add missing iostream include
 
 ---
  components/eamxx/src/share/util/scream_utils.hpp | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/components/eamxx/src/share/util/scream_utils.hpp b/components/eamxx/src/share/util/scream_utils.hpp
-index 4dddebf75aa5..b10399f9c99b 100644
+index 6e4f08ffd22e..b1771f3a1aed 100644
 --- a/components/eamxx/src/share/util/scream_utils.hpp
 +++ b/components/eamxx/src/share/util/scream_utils.hpp
 @@ -11,6 +11,7 @@
@@ -407,3 +390,21 @@ index 4dddebf75aa5..b10399f9c99b 100644
  
  namespace scream {
  
+
+From 9cbe170daca06896981e30690ce0d1cc0a236887 Mon Sep 17 00:00:00 2001
+From: mahf708 <naser.mahfouz@pnnl.gov>
+Date: Tue, 23 Apr 2024 20:16:48 -0500
+Subject: [PATCH 11/11] ekat update
+
+---
+ externals/ekat | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/externals/ekat b/externals/ekat
+index 69a7b84e3963..7495b60c1015 160000
+--- a/externals/ekat
++++ b/externals/ekat
+@@ -1 +1 @@
+-Subproject commit 69a7b84e39639aacb63f45861033d698b1cf085a
++Subproject commit 7495b60c1015d4872c85cc7dc0e0bf4dce6ee761
+
